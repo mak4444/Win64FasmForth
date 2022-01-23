@@ -1,0 +1,8 @@
+
+fasm from https://flatassembler.net/
+
+copy \Win64FasmForth --> \EXAMPLES\WIN64 
+
+build.bat in \EXAMPLES\WIN64\Win64FasmForth\spf\  --  img.asm make
+build.bat in \EXAMPLES\WIN64\Win64FasmForth  -- FAsmForth64.EXE make
+

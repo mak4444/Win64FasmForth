@@ -1,0 +1,1281 @@
+SP-FORTH - ANS FORTH 94 for Win95/98/ME/NT/2000/XP
+Open source project at http://spf.sf.net
+Russian FIG at http://www.forth.org.ru ; Started by A.Cherezov
+Version 4.00 Build 580 at 01.Nov.2005
+
+REQUIRE isn't unique
+: isn't unique
+
+REQUIRE [IF]	~MAK\CompIF1.f
+564FFE : [ELSE]
+F2 : [IF] 0= IF [COMPILE] [ELSE] THEN ;  IMMEDIATE
+10 : [THEN] ;  IMMEDIATE
+1 : \S            \ comment to end of file
+REQUIRE [DEFINED] ~nn\lib\ifdef.f 
+37 : [DEFINED] ( -- f ) \ "name"
+2D : [UNDEFINED]  ( -- f ) \ "name"
+16 : [IFDEF]
+1A : [IFNDEF]
+REQUIRE ((	~af\lib\c\prefixfun.f
+54 : curname ( -- false | addr u true )
+2F : count ( -- -1 | n )
+27 : , ( -- )
+13 : ) ( -- )
+5A : )) ( -- )
+30 : () ( -- )
+1D : ()) ( -- )
+33 : (( ( "func" -- )
+REQUIRE AT	~af\lib\var.f
+77 : _ATVALUE-CODE
+19 : VAR ( x "<spaces>name" -- )
+1A : AT
+REQUIRE {	~mak\locals4.f
+REQUIRE [IF] ~MAK\CompIF1.f
+B3 : LocalOffs ( n -- offs )
+15 : R_ALLOT, 
+9F : CompileLocalRec ( u -- )
+BF : CompileLocal@ ( n -- )
+C3 : CompileLocal! ( n -- )
+C0 : CompileLocalsInit
+DA : LocalsStartup
+8A : LocalsCleanup
+29 : ProcessLocRec ( "name" -- u )
+4F : CreateLocArray
+35 : LocalsRecDoes@ ( -- u )
+12 : LocalsRecDoes@2 ( -- u )
+3A : LocalsDoes@
+2D : ;; POSTPONE ; ; IMMEDIATE
+D : ^ 
+18 : -> ' >BODY @ CompileLocal!  ; IMMEDIATE
+10 : AT
+8 : TO ( "name" -- )
+63 : в POSTPONE -> ; IMMEDIATE
+20 : UAD+    1 CELLS  uAddDepth +! ;
+1A : UAD-   -1 CELLS  uAddDepth +! ;
+20 : [UAD+]  UAD+ ; IMMEDIATE
+13 : [UAD-]  UAD- ; IMMEDIATE
+10 : DO    POSTPONE DO      DO_SIZE              uAddDepth +! ; IMMEDIATE
+22 : ?DO   POSTPONE ?DO     DO_SIZE              uAddDepth +! ; IMMEDIATE
+20 : LOOP  POSTPONE LOOP    DO_SIZE NEGATE       uAddDepth +! ; IMMEDIATE
+20 : +LOOP POSTPONE +LOOP   DO_SIZE NEGATE       uAddDepth +! ; IMMEDIATE
+20 : >R    POSTPONE >R     [  1 CELLS ] LITERAL  uAddDepth +! ; IMMEDIATE
+20 : R>    POSTPONE R>     [ -1 CELLS ] LITERAL  uAddDepth +! ; IMMEDIATE
+20 : RDROP POSTPONE RDROP  [ -1 CELLS ] LITERAL  uAddDepth +! ; IMMEDIATE
+20 : 2>R   POSTPONE 2>R    [  2 CELLS ] LITERAL  uAddDepth +! ; IMMEDIATE
+2B : 2R>   POSTPONE 2R>    [ -2 CELLS ] LITERAL  uAddDepth +! ; IMMEDIATE
+30 : DUP>R S" DUP >R" EVALUATE ; IMMEDIATE
+20 : EXIT  ?COMP
+5E : ;LOC
+96 : ; ;LOC
+1C : {
+REQUIRE USES	~mak\~af\lib\api-func.f
+REQUIRE [DEFINED]  lib\include\tools.f
+REQUIRE AddNode    ~ac\lib\list\str_list.f
+1E6 : XCOUNT ( addr -- addr1 u1 )
+14 : NodeValue ( node -- value )
+7 : NextNode ( node1 -- node2 | 0 )
+F : FirstNode ( list -- node )
+10 : DoList ( xt list -- )
+42 : inList ( addr u list -- flag )
+79 : FreeNode ( node -- )
+D : FreeList ( list -- )
+24 : AddNode ( value list -- )
+45 : ReverseList ( list -- )
+REQUIRE ON         lib\ext\onoff.f
+66 : ON TRUE SWAP ! ;
+19 : OFF 0! ;
+86 : FreeListFunc ListFunc FreeList ;
+19 : SWINAPI ( NameLibAddr addr€¬пЏа®жҐ¤гал u -- )
+69 : (SEARCH-FUNC) ( wid -- NameLibAddr ProcAddr t | f )
+7F : SEARCH-FUNC ( -- NameLibAddr ProcAddr t | f )
+17 : ,FUNC ( n NameLibAddr u -- )
+86 : EXEC-FUNC ( NameLibAddr ProcAddr u -- )
+40 : FindWrap ( a u -- FALSE | xt TRUE )
+87 : (AddFuncNode) ( node -- )
+BA : (USES) ( "name.dll" wid -- )
+168 : USES ( "name.dll" -- ) \ Ї®¤Є«озҐ­ЁҐ dll Є бЇЁбЄг Ї®ЁбЄ 
+11 : NOTFOUND ( addr u -- )
+1EE : ;
+REQUIRE USES_C	~af\lib\c\capi-func.f
+REQUIRE ((	~af\lib\c\prefixfun.f
+REQUIRE CAPI:	~af\lib\c\capi.f
+REQUIRE [UNDEFINED] lib\include\tools.f
+4E : CODE ( "name" -- )
+FFDC97AF : VOCABULARY ( -- ) \ name
+6C : O_FORTH FORTH ;
+2E : FORTH ASM-TEMP-WL CONTEXT ! ;
+2F : ONLY  ONLY FORTH ;
+DB : +CSP ( -> P)    \ Добавить уровень
+3B : -CSP ( -> )     \ Убрать уровень
+3A : !CSP ( -> )     \ Инициализировать уровень
+34 : CSP@ ( -> A)
+26 : ?CSP ( -> )     \ Проверить выдержанность стека
+51 : CASE ( -> )
+26 : OF
+50 : ENDOF
+20 : ENDCASE
+59 : DEFER CREATE ['] NOOP , DOES> @ EXECUTE ;
+4D : DEFER@ ' >BODY STATE @ IF POSTPONE LITERAL POSTPONE @ ELSE @ THEN ; IMMEDIATE
+54 : IS '  >BODY STATE @ IF POSTPONE LITERAL POSTPONE ! ELSE ! THEN ; IMMEDIATE
+59 : +TO ' >BODY STATE @ IF POSTPONE LITERAL POSTPONE +! ELSE +! THEN ; IMMEDIATE
+50 : REVEAL SMUDGE ;
+2D : COMPILE ' POSTPONE LITERAL POSTPONE COMPILE, ; IMMEDIATE
+35 : (;CODE) R> LATEST 5 - ! ;
+30801 : IN-ASM ( ALL LATER WORDS ARE DEFINED IN THE ASSEMBLER VOCABULARY )
+5E : IN-HIDDEN ( ALL LATER WORDS ARE DEFINED IN THE HIDDEN VOCABULARY )
+60 : IN-FORTH ( ALL LATER WORDS ARE DEFINED IN THE FORTH VOCABULARY )
+60 : CELL- [ 1 CELLS ] LITERAL - ;
+2A : CELL/ [ 1 CELLS ] LITERAL / ;
+25 : 8* 8 * ;
+1E : 8/ 8 / ;
+22 : 8+ 8 + ;
+1B : 8- 8 - ;
+20 : 4+ 4 + ;
+20 : 2+ 2 + ;
+20 : 2- 2 - ;
+20 : 8*+ 8* + ;
+28 : 16*+ 16 * + ;
+31 : 16/MOD 16 /MOD ;
+32 : C0-8* 0C0 - 8* ;
+2D : C0+ 0C0 + ;
+2B : C0- 0C0 - ;
+FFFCF58A : SET-REGISTER-REF IS REGISTER-REF ;
+3C : SET-REGISTER-ASM IS REGISTER-ASM ;
+30E2C : DEF-ERR-HAND ( THE DEFAULT ERROR HANDLER FOR UNINITIALIZED ERROR HANDLERS )
+41F : NO-OPCODE-HANDLER -1 ABORT" NO OPCODE CREATOR INSTALLED" ;
+FFFE6E3C : A; ( FINISH THE ASSEMBLY OF THE PREVIOUS INSTRUCTION )
+1934A : !DEFAULT-SIZE ( NOT THE DEFAULT SIZE, EG. CHANGE 16BIT TO 32BIT )
+FFFE6CEA : USE16 ( GENERATE 16 BIT CODE BY DEFAULT )
+23 : USE32 ( GENERATE 32 BIT CODE BY DEFAULT )
+193DE : CLR-OPSTACK OPSTACK DUP CELL+ SWAP DATA-! ;
+48 : ?CLR-OPSTACK ( CLEAR THE OPERAND STACK WHEN THE FLAG IS NON-ZERO )
+FFFE6C0A : PUSH-OP ( MOVE A PARAMETER STACK ITEM TO THE OPSTACK )
+B7 : POP-OP ( MOVE AN ITEM FROM THE OPERAND STACK TO THE PARAMETER STACK )
+1936E : OP-DEPTH ( CHECK THE DEPTH OF THE OPERAND STACK )
+DD8 : ADDREF ( ADD A FORWARD REFERENCE AT CODE-HERE )
+11E : BACKPATCH ( BACKPATCH A FORWARD REFERENCE TO HERE )
+131 : REFSIZE ( DETERMINE THE SIZE OF A BOUND REFERENCE )
+BD : RESOLVE ( RESOLVE A FORWARD REFERENCE TO CODE-HERE )
+B9 : !LABEL ( BIND A LABEL TO CODE-HERE )
+58 : @LABEL ( FETCH THE BINDING OF A LABEL, OR RETURN A PSEUDO ADDRESS IF NOT )
+65 : CREATE-REF ( CREATE WORDS TO REFERENCE LOCAL LABELS )
+5B : CREATE-BIND ( CREATE WORDS TO BIND LOCAL LABELS )
+F7 : IN-MACRO ( FLAG THE FACT THAT WE ARE IN A MACRO )
+2F : !IN-MACRO ( FLAG THE FACT THAT WE'VE LEFT A MACRO )
+30 : +MACRO ( GET AN INDEX INTO THE LABEL TABLE FROM AN OFFSET )
+7A : +MACRO-REF ( REFERENCE A LABEL OFFSET FROM THE MACRO LEVEL )
+36 : +MACRO-BIND ( BIND A LABEL OFFSET FROM THE MACRO LEVEL )
+30 : ENTER-MACRO ( SET UP MACRO RELATIVE LOCAL LABELS )
+97 : LEAVE-MACRO ( GO BACK TO THE OLD REGIME )
+65 : CREATE-MACRO-REF ( CREATE MACRO-SAFE LOCAL LABEL REFERENCES )
+5E : CREATE-MACRO-BIND ( CREATE MACRO-SAFE LOCAL LABEL BINDINGS )
+70 : LOC-INIT ( INITIALIZE THE TABLES AND VARIABLES )
+1D4 : <ENC-REG> ( ENCODE THE SINGLE CELL OPERAND REPRESENTATION FROM THE VALUES )
+37 : <DEC-REG> ( DECODE THE SINGLE CELL OPERAND REPRESENTATION TO ITS )
+45 : ASM-OP ( CREATE THE ASSEMBLER OPERANDS FROM OPERAND DESCRIPTIONS )
+2A3 : RESET-VARS ( STORE 0 INTO ALL INSTRUCTION CODING VARIABLES )
+209 : RESET-FOR-NEXT-INSTR ( STORE A 0 INTO INTERMEDIATE CODING VARIABLES )
+3A8 : 1MODE-BIT! ( SET A MODE BIT )
+5B : 0MODE-BIT! ( CLEAR A MODE BIT )
+55 : MODE-BIT@ ( FETCH A MODE BIT )
+49 : HAS-IMMED ( FLAG AN IMMEDIATE OPERAND )
+2F : HAS-IMMED? ( DO WE HAVE AN IMMEDIATE OPERAND? )
+30 : HAS-MOD-R/M ( WE'VE SEEN AT LEAST ONE OPERAND )
+30 : HAS-MOD-R/M? ( HAVE WE SEEN AN OPERAND? )
+30 : HAS-S-I-B ( WE'VE STARTED WORK ON THE S-I-B )
+30 : HAS-S-I-B? ( HAVE WE STARTED WORK ON THE S-I-B )
+30 : REG,R/M ( ADDRESSING MODE IS REGISTER, REGISTER/MEMORY )
+30 : R/M,REG ( ADDRESSING MODE IS REGISTER/MEMORY, REGISTER )
+30 : DIRECTION? ( IS THE DESTINATION A REGISTER? )
+30 : HAS-FULL-OFF ( MUST GENERATE A FULL OFFSET )
+30 : HAS-FULL-OFF? ( DO WE NEED A FULL OFFSET? )
+30 : HAS-BASE ( WE HAVE A BASE )
+30 : HAS-BASE? ( DO WE HAVE A BASE? )
+30 : MAYBE-S-I-B? ( DO WE HAVE A POSSIBLE S-I-B? )
+46 : HAS-OFFSET ( FLAG THAT WE DO HAVE AN OFFSET )
+3A : HAS-OFFSET? ( DO WE HAVE AN OFFSET? )
+46 : IS-SHORT ( WE HAVE A SHORT DISPLACEMENT )
+3A : IS-SHORT? ( IS THE DISPLACEMENT SHORT? )
+30 : IS-NEAR ( WE HAVE A NEAR DISPLACEMENT )
+30 : IS-NEAR? ( DO WE HAVE A NEAR DISPLACEMENT? )
+4B : IS-FAR ( WE HAVE A FAR POINTER )
+35 : IS-FAR? ( DO WE HAVE A FAR DISPLACEMENT? )
+30 : DO-1OP-EXED ( WE'VE EXEC'D DO-1OP )
+30 : DO-1OP-EXED? ( HAVE WE EXEC'D DO-1OP? )
+30 : MAYBE-HAS-OFFSET ( FLAG THAT WE'VE PICKED SOMETHING UP FROM THE STACK )
+40 : MAYBE-HAS-OFFSET? ( HAVE WE PICKED UP SOMETHING FROM THE STACK? )
+40 : _?PARAMS ( ARE THERE PARAMETERS ON THE STACK? )
+95 : _?SEG ( IS THERE A SEGMENT OVERRIDE? )
+7B : _?LOCK ( IS THERE A LOCK PREFIX? )
+85 : _?REP ( IS THERE A REPEAT PREFIX? )
+9B : _?INST-PRE ( IS THERE ANY INSTRUCTION PREFIX? )
+84 : _?OPERANDS ( ARE THERE ANY OPERANDS? )
+72 : _?OPSIZE1 ( IS THE OPERAND SIZE MISMATCHED? )
+BA : _?OPSIZE2 ( JUST STORE THE OPERAND SIZE )
+4B : _?ADSIZE1 ( IS THE ADDRESS SIZE MISMATCHED? )
+B5 : _?ADSIZE2 ( JUST STORE THE ADDRESS SIZE )
+4B : _?SHORT ( IS THE ADDRESS SHORT? )
+84 : ?NOSHORT ( DO WE HAVE AN ILLEGAL SHORT? )
+5E : _?TOOFAR ( IS THE BRANCH OFFSET TO FAR? )
+66 : _?UNRES ( ARE THERE ANY UNRESOLVED FORWARD REFERENCE LABELS? )
+A1 : _?NOADSIZE ( NO OR UNKNOWN ADDRESS SIZE )
+62 : _?TOOMANYOPS ( ARE THERE TOO MANY OPERANDS? )
+5E : _?NOFAR ( IS THERE AN UNALLOWED FAR REFERENCE? )
+84 : <_?MATCH> ( THE ERROR ACTION FOR ?MATCH AND ?NOMATCH )
+4F : _?MATCH ( ERROR IF THE PARAMETERS MATCH )
+39 : _?NOMATCH ( ERROR IF THE PARAMETERS DON'T MATCH )
+2D : _?FINISHED ( ARE THERE OPERANDS LEFT? )
+52 : _?BADTYPE ( IS THE OPERAND TYPE ALLOWED? )
+71 : _?BADCOMBINE ( CAN THE OPERAND TYPES BE COMBINED? )
+52 : _?NOTENOUGH ( ARE THERE NOT ENOUGH OPERANDS? )
+54 : _?NOIMMED ( IS THERE AN ILLEGAL IMMEDIATE OPERAND? )
+7A : _?BADMODE ( IS THE ADDRESS MODE ILLEGAL? )
+4B : _?REG,R/M ( IS THE DESTINATION A REGISTER? )
+87 : _?R/M,REG ( IS THE SOURCE A REGISTER? )
+76 : _?MEM ( IS ONE OF THE OPERANDS IN MEMORY? )
+81 : _?REG ( ARE ALL OF THE OPERANDS REGISTER? )
+8D : ?MEM,REG ( IS THE INSTRUCTION CODED AS MEMORY,REGISTER? )
+4A : ?REG,MEM ( IS THE INSTRUCTION CODED AS REGISTER,MEMORY? )
+40 : ?REGEXCLUS ( IS THE ADDRESSING MODE EXCLUSIVE? )
+FFFE4C8F : REPORT-ERRORS ( TURN ON ERROR REPORTING )
+125 : NO-ERRORS ( TURN OFF ERROR REPORTING )
+1B29A : INST, ( GENERATE A NECESSARY INSTRUCTION PREFIX )
+7B : ADDR, ( GENERATE A NECESSARY ADDRESS SIZE PREFIX )
+7D : DATA, ( GENERATE A NECESSARY DATA SIZE PREFIX )
+70 : SEG, ( GENERATE A NECESSARY SEGMENT OVERRIDE PREFIX )
+73 : GENERATE-PREFIXES ( GENERATE NECESSARY PREFIXES )
+3B : SEG-PRE CREATE DATA-, DOES> DATA-@ SEG-PREFIX DATA-! ;
+62 : INST-PRE CREATE DATA-, DOES> DATA-@ INST-PREFIX DATA-! ;
+70 : SAVE-DEPTH ( -- )
+49 : DEPTH-CHANGE ( REPORT ON A CHANGE OF DEPTH )
+52 : COMPILE-OPCODE ( COMPILE THE BYTES IN AN OPCODE )
+AE : _SAVE-INST ( SAVE THE CURRENT INSTRUCTION, AND FETCH THE PREVIOUS ONE )
+FFFE4BD4 : POSTFIX ['] _SAVE-INST IS SAVE-INST ;
+27 : PREFIX ['] NOOP IS SAVE-INST ;
+1B4C2 : _DO-OPCODE ( CREATE THE ACTUAL OPCODE, OR AT LEAST CALL THE FUNCTIONS )
+43 : OPCODE ( C:: PARAMETER \ XT -- )
+60 : ALL-EXCEPT ( PROCESS ALL OPERANDS EXCEPT ONE IN PARTICULAR )
+70 : OFFSET8, ( CREATE AN 8 BIT CODE-HERE RELATIVE OFFSET )
+84 : OFFSET16, ( CREATE A 16 BIT CODE-HERE RELATIVE OFFSET )
+80 : OFFSET32, ( CREATE A 32 BIT CODE-HERE RELATIVE OFFSET )
+59 : OFFSET16/32, ( CREATE A 16 OR 32 BIT CODE-HERE RELATIVE OFFSET )
+3E : FLAG-FOR-SIZE-PREFIX ( DO WE NEED A SIZE PREFIX? )
+53 : CHECK-AD-SIZE ( CHECK THE ADDRESS SIZE )
+56 : CHECK-DT-SIZE ( CHECK THE OPERAND SIZE )
+60 : CHECK-SIZES ( CHECK THE ADDRESS AND OPERAND SIZES )
+37 : RTYPE! ( STORE THE ADDRESSING MODE TYPE AND UPDATE MAXTYPE )
+88 : SPECIAL-PROCESS? ( DO WE NEED TO SPECIALLY PROCESS THIS REGISTER? )
+6F : SPECIAL-REGISTER? ( IS THIS A SPECIAL REGISTER? )
+70 : DO-REG ( DO ANY REGISTER ADDRESSING MODE TRANSLATION )
+18A : DO-IMMED ( DO AN IMMEDIATE ADDRESSING MODE OPERAND )
+4E : DO-INDIRE ( DO AN INDIRECT ADDRESSING MODE OPERAND )
+92 : DO-INDEX ( DO A SCALED INDEX ADDRESSING MODE )
+D8 : DO-BASED ( DO A BASE REGISTER ADDRESSING MODE )
+154 : OPERAND-CASES ( PROCESS AN OPERAND BASED ON ITS TYPE )
+179 : SAVE-OFFSET ( SAVE THE OFFSET, IF IT'S PRESENT )
+68 : DO-1OP ( PROCESS A SINGLE OPERAND )
+A8 : LIT-OP ( INSTERT THE LITERAL VALUE OF AN OPERAND INTO CODE )
+3D : PARSE-CALL/JMP-OPERANDS ( PARSE THE OPERANDS FOR CALLS AND JUMPS )
+118 : DO-2OPS ( DO TWO OPERANDS AND SET SIZE PREFIXES )
+2A : INSTALL-/R ( INSTALL THE /R FIELD IN A MOD-R/M BYTE )
+5C : DISP, ( COMPILE THE DISPLACEMENT )
+11B : DEFAULT-8BIT ( CHANGE A ZERO SIZE TO 8BIT )
+49 : >DEFAULT-SIZE ( CHANGE A ZERO SIZE TO THE DEFAULT SIZE )
+40 : GET-DT-SIZE ( GET THE CURRENT DATA SIZE, DEFAULT IS 8 BIT )
+3D : GET-AD-SIZE ( GET THE CURRENT ADDRESS SIZE, DEFAULT IS DEFAULT-SIZE )
+40 : GET-FP-SIZE ( GET THE SIZE OF FP OPERAND, DEFAULT IS DEFAULT-SIZE )
+40 : IMMED, ( COMPILE THE IMMEDIATE OPERAND )
+FC : 8BIT? ( IS THE OPERATION 8 BITS WIDE? )
+27 : A16BIT? ( IS THE ADDRESS SIZE 16 BITS? )
+30 : A32BIT? ( IS THE ADDRESS SIZE 32 BITS? )
+30 : S-I-B, ( COMPILE THE S-I-B BYTE )
+5D : +SIZE-BIT ( ADJUST AN OPCODE FOR THE SIZE OF THE OPERATION )
+36 : +DIRECT-BIT ( ADJUST AN OPCODE FOR THE DIRECTION OF THE OPERANDS )
+30 : MATCH-R/M? ( DOES THE VALUE MATCH THE R/M FIELD OF THE MOD-R/M? )
+45 : PURE-REG? ( IS THE MOD FIELD OF THE MOD-R/M = 3? )
+4C : DISPLACEMENT? ( DOES THE ADDRESS MODE HAVE A PURE DISPLACEMENT? )
+5D : [(E)BP]? ( DOES THE ADDRESS MODE HAVE EITHER [BP] OR [EBP] ALONE? )
+7C : [REG*N]? ( DOES IT HAVE ONLY AN INDEX REGISTER? )
+39 : [ESP][REG]? ( DOES IT HAVE ESP AS AN INDEX REGISTER? )
+54 : [ESP]? ( DOES IT HAVE ONLY A BASE OF ESP? )
+57 : DO-[(E)BP] ( DO A NAKED [BP] OR [EBP] )
+34 : DO-DISP ( PROCESS A DISPLACEMENT )
+69 : DO-[REG*N] ( PROCESS A NAKED INDEX )
+73 : DO-[ESP][REG] ( SWAP INDEX AND BASE REGISTERS IN S-I-B )
+6A : DO-[ESP] ( DO [ESP] ONLY )
+58 : MOD-R/M, ( COMPILE THE MOD-R/M FIELD )
+DF : COMPILE-FIELDS ( COMPILE THE MOD-R/M, S-I-B, DISPLACEMENT, AND IMMED FIELDS )
+43 : GENERIC-ENTRY2 ( GENERIC ENTRY SEQUENCE FOR TWO OPERAND INSTRUCTIONS )
+60 : +FP-SIZE ( ADD 4 IF THE OPERATION SIZE IS 64BIT: IE., DEFAULT FLOAT )
+43 : /R&FREG>MOD-R/M ( TURN /R AND FP REG INTO THE RQD MOD-R/M )
+3C : SWAP-REGS ( SWAP THE ORDER OF REGISTERS IN THE MOD-R/M BYTE )
+6A : PARSE-FP-OPS ( PARSE FLOATING POINT INSTRUCTION OPERANDS )
+A8 : MOD-R/M>FREG ( CONVERT MOD-R/M BYTE INTO AN FP REGISTER NUMBER )
+57 : FP-DIRECTION? ( WHICH DIRECTION IS THE FLOATING POINT DATA GOING? )
+47 : +FP-DIRECT-BIT ( ADD 4, DEPENDING ON THE DIRECTION OF THE OPERANDS )
+3F : FP-GENERIC-ASSEMBLE ( GENERIC ASSEMBLY OF FLOATING POINT INSTRUCTIONS )
+52 : SAVE-IMMED ( SAVE IMMEDIATE OPERANDS FOR DOUBLE-SHIFT )
+4E : NEXT-IS-, ( MAKE SURE THE NEXT OPERAND IS A COMMA )
+3D : 1BYTE ( COMPILE A SINGLE BYTE, NO OPERAND, NO OVERRIDE OPCODE )
+70 : 2BYTE ( COMPILE A TWO BYTE, NO OPERAND, NO OVERRIDE OPCODE )
+70 : 3BYTE ( COMPILE A THREE BYTE, NO OPERAND, NO OVERRIDE OPCODE )
+8B : SIZE-COND-COMP ( COMPILE A SIZE CONDITIONAL ASSEMBLY SEQUENCE )
+A4 : STR-ENTRY ( CHECK FOR ENTRY ERROR CONDITIONS )
+C2 : STR-OPERANDS ( PROCESS OPERANDS FOR STRING INSTRUCTIONS )
+50 : STR-INST ( THE ENGINE TO CREATE STRING INSTRUCTIONS )
+98 : BYTE-STR-INST ( BYTE STRING INSTRUCTIONS )
+3D : WORD-STR-INST ( WORD STRING INSTRUCTIONS )
+40 : DWORD-STR-INST ( DWORD STRING INSTRUCTIONS )
+40 : JCC-ENTRY ( THE ENTRY SEQUENCE FOR CONDITIONAL BRANCH INSTRUCTIONS )
+119 : JCC-8BIT ( COMPILE AN 8 BIT CONDITIONAL BRANCH )
+37 : JCC-16/32BIT ( COMPILE A 16 OR 32BIT CONDITIONAL BRANCH )
+92 : JCC-UNKNOWN ( COMPILE A CONDITIONAL BRANCH WITH AN UNKNOWN SIZE )
+B0 : JCC-COMPILE ( COMPILE A CONDITIONAL BRANCH )
+B9 : LOOP-ENTRY ( THE ENTRY SEQUENCE FOR LOOP INSTRUCTIONS )
+132 : LOOP-COMPILE ( COMPILE A LOOP INSTRUCTION )
+75 : JCXZ-COMPILE ( COMPILE JCXZ )
+3E : JECXZ-COMPILE ( COMPILE JECXZ )
+40 : GROUP1-COMPILE ( COMPILE GROUP 1 INSTRUCTIONS )
+127 : GROUP2-COMPILE ( COMPILE GROUP 2 INSTRUCTIONS )
+171 : GROUP3-COMPILE ( COMPILE GROUP 3 INSTRUCTIONS )
+CE : TEST-COMPILE ( COMPILE THE TEST INSTRUCTION, WHICH IS A SPECIAL GROUP3 INS )
+99 : INC-DEC-ENTRY  ( PARAM -- | X \ PARAM -- )
+95 : INC-COMPILE ( COMPILE AN INC OR DEC )
+97 : DEC-COMPILE ( COMPILE AN INC OR DEC )
+90 : GROUP6&7-COMPILE ( COMPILE A GROUP 6 OR 7 INSTRUCTION )
+E6 : GROUP8-COMPILE ( COMPILE A GROUP 8 INSTRUCTION )
+E3 : ENTER-COMPILE ( COMPILE THE ENTER INSTRUCTION )
+9D : ARPL-COMPILE ( COMPILE THE ARPL INSTRUCTION )
+B7 : XCHG&ALU-COMPILE ( COMPILE CMPXCHG OR XADD )
+99 : CMPXCHG8B-COMP ( ASSEMBLE CMPXCHG8B )
+D3 : BOUND-COMPILE ( COMPILE THE BOUND INSTRUCTION )
+75 : BSWAP-COMPILE ( COMPILE BSWAP )
+BF : PUSH/POP-ENTRY ( ENTRY SEQUENCE FOR PUSH AND POP COMPILERS )
+B1 : PUSH-COMPILE ( COMPILE PUSH )
+237 : POP-COMPILE ( COMPILE POP )
+1AD : CALL/JMP-ENTRY ( ENTRY FOR CALL AND JUMP )
+59 : CALL-COMPILE ( COMPILE CALL )
+179 : JMP-COMPILE ( COMPILE JMP )
+1C6 : I/O-COMPILE ( COMPILE AN IN OR OUT )
+252 : BS-COMPILE ( COMPILE A BIT SCAN INSTRUCTION, AND ALSO SELECTOR VALIDATION )
+90 : MOV-COMPILE ( COMPILE A MOV INSTRUCTION )
+197 : XCHG-COMPILE ( COMPILE THE XCHG INSTRUCTION )
+77 : RETF? ( ADJUST OPCODE FOR FAR RETURN )
+38 : RET-COMPILE ( COMPILE THE RET INSTRUCTION )
+16C : RETF-COMPILE ( COMPILE RETF )
+37 : INT-COMPILE ( COMPILE THE INT INSTRUCTION )
+AE : SETCC-COMPILE ( COMPILE SETCC INSTRUCTIONS )
+BA : XLAT-COMPILE ( COMPILE XLAT )
+107 : XLATB-COMPILE ( COMPILE XLATB )
+83 : DOUBLE-SHIFT ( COMPILE SHLD, SHRD )
+114 : LOAD-PTR-COMP ( COMPILE A POINTER LOAD INSTRUCTION )
+A7 : MOVX-COMPILE ( COMPILE MOVSX/MOVZX )
+EA : FAD/FMUL-COMPILE ( COMPILE FADD AND FMUL )
+123 : FST-COMPILE ( COMPILE FST AND FSTP )
+187 : FIX-COMPILE ( COMPILE FIX INSTRUCTIONS )
+CC : FXP-COMPILE ( COMPILE FXP INSTRUCTIONS )
+8D : FCOM-COMPILE ( COMPILE FCOM AND FCOMP )
+15E : FMISC-COMPILE ( COMPILE MISCELLANEOUS FP INSTRUCTIONS )
+103 : GENERIC-FP-ENTRY1 ( GENERIC ENTRY SEQUENCE FOR FP INST THAT TAKE ONE MEMORY )
+8A : FBLD/STP-COMPILE ( COMPILE FBLD & FBSTP )
+5F : FIST-COMPILE ( COMPILE FIST & FISTP )
+94 : FSTSW-COMPILE ( COMPILE FSTSW & FNSTSW )
+16D : FILD-COMPILE ( COMPILE FILD )
+B0 : FLD-COMPILE ( COMPILE FLD )
+194 : FDIV/SUB-COMPILE ( COMPILE FDIV, FDIVR, FSUB, & FSUBR )
+1B1 : SAVE-CURRENT ( SAVE THE CURRENT VOCABULARY LINKAGE )
+51 : UNSAVE-CURRENT ( RESET CURRENT-SV )
+4E : RESTORE-CURRENT ( RESTORE CURRENT TO ITS PREVIOUSLY SAVED VALUE )
+6B : RESET-ASM RESET-VARS CLR-OPSTACK LOC-INIT SAVE-DEPTH ;
+FFFE212E : INIT-ASM ( INITALIZE ASSEMBLY )
+1DF0D : _CODE ( START A NATIVE CODE DEFINITION )
+5E : _;CODE ( CREATE THE [;CODE] PART OF A LOW LEVEL DEFINING WORD )CODE isn't unique
+
+FFFC5BC9 : SUBR: ( CREATE A SUBROUTINE IN THE ASSEMBLER VOCABULARY )
+BA : MACRO: ( CREATE A MACRO IN THE ASSEMBLER VOCABULARY )
+1C455 : END-ASM A; PREVIOUS ;
+1DF6A : _END-CODE ( END A CODE DEFINITION )
+FFFE210B : ENDM ( END A MACRO DEFINITION )
+40 : ;MACRO ( END A MACRO DEFINITION )
+26 : ?LEAVE-MACRO ( CONDITIONALLY UNNEST A MACRO )
+39 : EXIT ( REDEFINE EXIT TO TAKE CARE OF MACROS )
+4D : PREFIX? ( ARE WE IN PREFIX MODE? )
+3A : POSTFIX? ( ARE WE IN POSTFIX MODE? )
+25 : SET-POSTFIX ( SET THE ASSEMBLER TO POSTFIX MODE, LEAVE A MODE FLAG )
+47 : SET-PREFIX ( SET THE ASSEMBLER TO PREFIX MODE, LEAVE A MODE FLAG )
+40 : RESET-SYNTAX ( RESET THE ASSEMBLER TO THE PREVIOUSLY FLAGGED SYNTAX )
+1DD88 : _CODE ( START A NATIVE CODE DEFINITION )
+4B : _;CODE ( CREATE THE [;CODE] PART OF A LOW LEVEL DEFINING WORD )
+FFFC5BE0 : FCALL A; [COMPILE] ' COMPILE, ;
+1C690 MACRO: ;M POSTPONE ;MACRO ENDM IMMEDIATE
+2B MACRO: AL, AL , ;M
+4B MACRO: CL, CL , ;M
+40 MACRO: DL, DL , ;M
+40 MACRO: BL, BL , ;M
+40 MACRO: AH, AH , ;M
+40 MACRO: CH, CH , ;M
+40 MACRO: DH, DH , ;M
+40 MACRO: BH, BH , ;M
+40 MACRO: AX, AX , ;M
+40 MACRO: CX, CX , ;M
+40 MACRO: DX, DX , ;M
+40 MACRO: BX, BX , ;M
+40 MACRO: SP, SP , ;M
+40 MACRO: BP, BP , ;M
+40 MACRO: SI, SI , ;M
+40 MACRO: DI, DI , ;M
+40 MACRO: EAX, EAX , ;M
+50 MACRO: ECX, ECX , ;M
+50 MACRO: EDX, EDX , ;M
+50 MACRO: EBX, EBX , ;M
+50 MACRO: ESP, ESP , ;M
+50 MACRO: EBP, EBP , ;M
+50 MACRO: ESI, ESI , ;M
+50 MACRO: EDI, EDI , ;M
+50 MACRO: [BX+SI], [BX+SI] , ;M
+50 MACRO: [BX+DI], [BX+DI] , ;M
+50 MACRO: [BP+SI], [BP+SI] , ;M
+50 MACRO: [BP+DI], [BP+DI] , ;M
+50 MACRO: [SI], [SI] , ;M
+50 MACRO: [DI], [DI] , ;M
+50 MACRO: [BP], [BP] , ;M
+50 MACRO: [BX], [BX] , ;M
+50 MACRO: [EAX], [EAX] , ;M
+50 MACRO: [ECX], [ECX] , ;M
+50 MACRO: [EDX], [EDX] , ;M
+50 MACRO: [EBX], [EBX] , ;M
+50 MACRO: [ESP], [ESP] , ;M
+50 MACRO: [EBP], [EBP] , ;M
+50 MACRO: [ESI], [ESI] , ;M
+50 MACRO: [EDI], [EDI] , ;M
+50 MACRO: [EAX*2], [EAX*2] , ;M
+50 MACRO: [ECX*2], [ECX*2] , ;M
+50 MACRO: [EDX*2], [EDX*2] , ;M
+50 MACRO: [EBX*2], [EBX*2] , ;M
+50 MACRO: [EBP*2], [EBP*2] , ;M
+50 MACRO: [ESI*2], [ESI*2] , ;M
+50 MACRO: [EDI*2], [EDI*2] , ;M
+50 MACRO: [EAX*4], [EAX*4] , ;M
+50 MACRO: [ECX*4], [ECX*4] , ;M
+50 MACRO: [EDX*4], [EDX*4] , ;M
+50 MACRO: [EBX*4], [EBX*4] , ;M
+50 MACRO: [EBP*4], [EBP*4] , ;M
+50 MACRO: [ESI*4], [ESI*4] , ;M
+50 MACRO: [EDI*4], [EDI*4] , ;M
+50 MACRO: [EAX*8], [EAX*8] , ;M
+50 MACRO: [ECX*8], [ECX*8] , ;M
+50 MACRO: [EDX*8], [EDX*8] , ;M
+50 MACRO: [EBX*8], [EBX*8] , ;M
+50 MACRO: [EBP*8], [EBP*8] , ;M
+50 MACRO: [ESI*8], [ESI*8] , ;M
+50 MACRO: [EDI*8], [EDI*8] , ;M
+50 MACRO: ES, ES , ;M
+40 MACRO: CS, CS , ;M
+40 MACRO: SS, SS , ;M
+40 MACRO: DS, DS , ;M
+40 MACRO: FS, FS , ;M
+40 MACRO: GS, GS , ;M
+40 MACRO: CR0, CR0 , ;M
+50 MACRO: CR2, CR2 , ;M
+50 MACRO: CR3, CR3 , ;M
+50 MACRO: CR4, CR4 , ;M
+50 MACRO: DR0, DR0 , ;M
+50 MACRO: DR1, DR1 , ;M
+50 MACRO: DR2, DR2 , ;M
+50 MACRO: DR3, DR3 , ;M
+50 MACRO: DR6, DR6 , ;M
+50 MACRO: DR7, DR7 , ;M
+50 MACRO: TR3, TR3 , ;M
+50 MACRO: TR4, TR4 , ;M
+50 MACRO: TR5, TR5 , ;M
+50 MACRO: TR6, TR6 , ;M
+50 MACRO: TR7, TR7 , ;M
+50 MACRO: ST, ST , ;M
+40 MACRO: ST(0), ST(0) , ;M
+50 MACRO: ST(1), ST(1) , ;M
+50 MACRO: ST(2), ST(2) , ;M
+50 MACRO: ST(3), ST(3) , ;M
+50 MACRO: ST(4), ST(4) , ;M
+50 MACRO: ST(5), ST(5) , ;M
+50 MACRO: ST(6), ST(6) , ;M
+50 MACRO: ST(7), ST(7) , ;M
+218035 : CAPI: ( "ИмяПроцедуры" "ИмяБиблиотеки" n -- )
+2B : CVAPI: ( "ИмяПроцедуры" "ИмяБиблиотеки" -- )
+REQUIRE USES	~af\lib\api-func.f
+59 : SCAPI ( n NameLibAddr addr€¬пЏа®жҐ¤гал u -- )
+71 : SEARCH-CFUNC ( -- NameLibAddr ProcAddr t | f )
+1C : EXEC-CFUNC ( n NameLibAddr ProcAddr u -- )
+33 : (AddFuncNode2) ( node -- )
+EF : USES_C ( "name.dll" -- ) \ Ї®¤Є«озҐ­ЁҐ dll Є бЇЁбЄг Ї®ЁбЄ 
+1E : NOTFOUND ( addr u -- )
+REQUIRE FStream	~af\lib\stream_io.f
+REQUIRE PAllocSupport  devel\~af\lib\pallocate.f
+153 : ALLOCATE ( u -- a-addr ior )
+4A : FREE ( a-addr -- ior )
+1D : RESIZE ( a-addr1 u -- a-addr2 ior )FlushFileBuffers isn't unique
+
+1A3 : HANDLE>STREAM ( h -- s )
+5C : HANDLE>STREAM-WITH ( h xt -- s )
+1F : STREAM>WSTREAM ( s -- )
+3E : STREAM>WSTREAM-WITH ( s xt -- )
+1E : REFILL-STREAM ( s -- u ior )
+51 : STREAM-HANDLE ( s -- h )
+D : CLEAR-RBUF ( s -- )
+28 : FlushWBuffer ( s -- ior )
+5E : CLOSE-STREAM ( s -- ior )
+63 : FILE>STREAM ( h -- s )  ['] READ-FILE  HANDLE>STREAM-WITH ;
+15 : FILE>RWSTREAM ( h -- s )
+28 : CLOSE-FILE ( s -- ior ) \ 94 FILE
+3F : CREATE-FILE ( c-addr u fam -- s ior ) \ 94 FILE
+27 : CREATE-FILE-SHARED ( c-addr u fam -- s ior )
+20 : OPEN-FILE ( c-addr u fam -- s ior ) \ 94 FILE
+20 : OPEN-FILE-SHARED ( c-addr u fam -- s ior )
+20 : FILE-POSITION ( s -- ud ior ) \ 94 FILE
+38 : REPOSITION-FILE ( ud s -- ior ) \ 94 FILE
+1C : FILE-SIZE ( s -- ud ior ) \ 94 FILE
+15 : RESIZE-FILE ( ud s -- ior ) \ 94 FILE
+56 : READ-FILE ( c-addr u1 s -- u2 ior ) \ 94 FILE
+157 : READ-LINE ( c-addr u1 s -- u2 flag ior ) \ 94 FILE
+2BA : WRITE-FILE ( c-addr u s -- ior ) \ 94 FILE
+F6 : WRITE-LINE ( c-addr u s -- ior ) \ 94 FILE
+45 : FLUSH-FILE ( s -- ior ) \ 94 FILE EXT
+REQUIRE WINCONST	lib\win\const.f
+REQUIRE +LibraryDirName  src\win\spf_win_module.f
+REQUIRE TryOpenFile      lib\ext\util.f
+3B : TryOpenFile ( addr u mode -- u ior | handle 0 )
+F3 : compare_const ( n-const -- u 0 | -1 | 1 )
+5F : _SEARCH-CONST ( lo hi -- u -1 | 0 )
+7B : SEARCH-CONST ( addr u -- u -1 | 0 )
+85 : NOTFOUND ( addr u -- )
+75 : ADD-CONST-VOC ( addr u -- )
+92 : REMOVE-ALL-CONSTANTS
+REQUIRE GetIniString	~af\lib\ini.f
+REQUIRE [DEFINED]  lib\include\tools.f
+14B : N>S ( u -- addr0)
+3E : GetIniString ( addr0_ini addr0_sec addr0_key addr0_def -- addr0)
+55 : SetIniString ( addr0_ini addr0_sec addr0_key addr0 -- )
+18 : GetIniInt ( addr0_ini addr0_sec addr0_key u1 -- u2)
+44 : SetIniInt ( addr0_ini addr0_sec addr0_key u1 -- )
+13 : EnumSectionKeys ( addr0_ini addr0_sec addr u -- flag)
+3F : DeleteIniKey ( addr0_ini addr0_sec addr0_key -- )
+14 : DeleteIniSection ( addr0_ini addr0_sec -- )
+REQUIRE SaveTlsIndex	~af\lib\QuickWNDPROC.f
+170 : SaveTlsIndex ( -- )
+1E : RestoreTlsIndex ( -- )
+68 : EXTERN2 ( xt1 -- xt2 )
+34 : QUICK_WNDPROC ( xt "name" -- )
+REQUIRE MENUITEM	~af\lib\menu.f
+REQUIRE WinNT?	~ac\lib\win\winver.f
+A1 : WinNT? ( -- flag )
+REQUIRE :M	~af\lib\nwordlist.f
+49 : SEARCH-NLIST ( msg wid -- 0 | xt 1 )
+41 : +NWORD ( n wid -> )
+65 : NHEADER ( n -- )
+BC : :M ( "WM_..." -- )
+REQUIRE USES	~af\lib\api-func.f
+REQUIRE S>UNICODE	~nn\lib\unicode.f
+55 : S>UNICODE { a u \ buf -- addr2 u2 }
+111 : AZ>UNICODE DUP IF ASCIIZ> S>UNICODE DROP THEN ;
+1B : UASCIIZ> ( addr -- addr u ) \ ў аЁ ­в ASCIIZ> ¤«п Unicode
+3B : UNICODE>S { wa u1 \ buf -- a u2 }
+12E : AppMenuA ( lpNewItem uIDNewItem uFlags hMenu -- )
+82 : AppMenuW ( lpNewItem uIDNewItem uFlags hMenu -- )
+60 : MENU ( menu-wid id_menu -- id_menu hmenu )
+8F : END-MENU ( id_menu+n hmenu -- )
+5 : POPUP ( id_menu -- id_menu hmenu )
+70 : END-POPUP ( id_menu1 hmenu1 id_menu2 hmenu2 -- id_menu1+1 hmenu1 )
+49 : MENUITEM ( id_menu hmenu id_item -- id_menu+1 hmenu )
+43 : MENUSEPARATOR ( id_menu hmenu -- hmenu )
+REQUIRE STRUCT:	~af\lib\struct-t.f
+2C : TVOC ( -- ) \ name
+47 : (f:) ( obj offset -- )
+1B : (f...:) ( obj cells offset -- )
+3B : STRUCT: ( "name" -- old-current )
+3A : ;STRUCT ( old-current -- )
+34 : ---- isn't unique
+
+5F : f: ( offset "new-name" -- offset+cell )
+59 : f...: ( offset "new-name" -- offset+cell )
+REQUIRE :M	~af\lib\nwordlist.f
+REQUIRE #define	~af\lib\c\define.f
+50 : #define
+REQUIRE WAIT	wait.f
+13B : CREATE-AUTOEVENT ( -- handle ior )
+40 : SET-EVENT ( handle -- ior )
+29 : WAIT ( handle ms -- flag ior )
+5A [IF] : vocLocalsSupport vocLocalsSupport_M  ;
+REQUIRE INCLUDED-STRINGS	~af\lib\langstrings.f
+REQUIRE :M           ~af\lib\nwordlist.f
+REQUIRE USES         ~af\lib\api-func.fCP_ACP isn't unique
+
+REQUIRE S>UNICODE    ~nn\lib\unicode.f
+4B : lang: POSTPONE \ ;
+E : : ( "string" -- )
+83 : INCLUDED-STRINGS ( addr u wid -- )
+REQUIRE CASE-INS	lib\ext\caseins.f
+REQUIRE REPLACE-WORD lib\ext\patch.f
+5D : REPLACE-WORD ( by-xt what-xt )
+REQUIRE ON           lib\ext\onoff.f
+79 : UCOMPARE ( addr1 u1 addr2 u2 -- 0 | -1 )
+98 : USEARCH-WORDLIST ( c-addr u wid -- 0 | xt 1 | xt -1 )
+A1 : UDIGIT ( C, N1 -> N2, TF / FF ) 
+ REQUIRE  Z" ~mak/~yz/lib/common.f
+REQUIRE =OF ~yz/lib/mycase.f
+REQUIRE CASE  lib/ext/case.f
+100 : +CSP ( -> P)    \ Добавить уровень
+23 : -CSP ( -> )     \ Убрать уровень
+1A : !CSP ( -> )     \ Инициализировать уровень
+24 : CSP@ ( -> A)
+16 : ?CSP ( -> )     \ Проверить выдержанность стека
+31 : CASE ( -> )
+6 : OF
+40 : ENDOF
+10 : ENDCASE
+49 : <OF<  
+67 : =OF 
+20 : END-CASE
+42 : ==  CONSTANT ;
+E : PRESS  NIP ;
+E : NOT  INVERT ;
+F : ..  DUP . ;  : ``  KEY DROP ;
+19 : ..  DUP . ;  : ``  KEY DROP ;
+10 : -! ( n a --) SWAP NEGATE SWAP +! ;
+16 : CELL+!  CELL SWAP +! ;
+21 : CELL-!  CELL SWAP -! ;
+1D : CELLS+  CELLS + ;
+E : CELLS@  CELLS+ @ ;
+12 : CELLS!  CELLS+ ! ;
+16 : CELL" ( ->") [CHAR] " PARSE DROP @ STATE @ IF [COMPILE] LITERAL THEN ; IMMEDIATE
+32 : LOWORD ( n --n) 0x0000FFFF AND ;
+E : HIWORD ( n--n)  0xFFFF0000 AND 16 RSHIFT ;
+13 : ON  ( a--) TRUE SWAP ! ;ON isn't unique
+
+1A : OFF ( a--) 0! ;OFF isn't unique
+
+1A : ?  @ . ;
+B : 1-!  -1 SWAP +! ;
+1B : c: POSTPONE [CHAR] ; IMMEDIATE
+13 : ZLEN ( z -- #) DUP
+33 : CZMOVE ( a # z --) 2DUP + >R SWAP CMOVE R> 0 SWAP C! ;
+2C : ZMOVE ( z a --) OVER ZLEN 1+ CMOVE ;
+22 : s.  SP@ S0 @ CELL - 2DUP - 
+D8 : .ASCIIZ ( z--) DUP ZLEN TYPE ;
+12 : Z>NUMBER ( z--n true / false) 
+6F : mchar ( --c/-1) counter @ 1 <
+49 : unchar  counter 1+! fromadr 1-! ;
+1F : c> ( c--) toadr @ C!  toadr 1+! ;
+1F : escape ( c--c ) CASE 
+F9 : ESC-CZMOVE ( a # to --)
+67 : ALITERAL  R> DUP DUP ZLEN + 1+ >R ;
+29 : " ( -->") [CHAR] " PARSE ( a #)
+79 : Z" [COMPILE] " ; IMMEDIATE
+D : ASCIIZ ( z -- ; ->bl) 
+38 : .H  BASE @ HEX SWAP ." 0x" U. BASE ! ;
+3F : PARAMS ( n --) CELLS S0 +! ;
+1B : GETMEM ( # -- a)  ALLOCATE THROW ;
+13 : FREEMEM ( a -- ) FREE THROW ;
+6A : dll-error ( -- n) GetLastError ;
+11 : error-text ( err -- a)
+54 : .ansiz ( z -- ) DUP ZLEN ANSI>OEM TYPE ;
+1C : .err ( err# --) DUP .H 
+2B : .lerr dll-error .err ;MultiByteToWideChar isn't unique
+WideCharToMultiByte isn't unique
+
+D9 : >unicode ( z a -- )
+50 : >unicodebuf ( z -- a) \ записывает строку в выделенный буфер и возвращает
+50 : unicode> ( a z --)
+44 : unicode>buf ( a -- z) \ записывает строку в выделенный буфер и возвращает
+8E : .unicode ( a -- ) unicode>buf DUP .ansiz FREEMEM ;
+1A : CZGETMEM ( a n -- a) DUP 1+ GETMEM DUP >R CZMOVE R> ;
+26 : ZGETMEM ( z -- a) ASCIIZ> CZGETMEM ;
+B2 : ZCOMPARE ( z1 z2 -- n) lstrcmp ;
+8 : ZAPPEND ( z1 z2 -- ) SWAP lstrcat DROP ;
+1E : 0APPEND ( z -- ) ASCIIZ> + 1+ 0 SWAP C! ;
+Loading Intel Pentium MMX disassembler...
+REQUIRE [IF] ~mak\CompIF.f
+REQUIRE CASE lib\ext\case.f
+REQUIRE WITHIN lib\include\core-ext.f
+28 : DEFER VECT ;
+A : DUP>R R> OVER >R >R ;
+17 : UMAX ( D1 D2  -- FLAG )
+4C : 0X  BASE @ HEX >R BL WORD ?LITERAL
+3A : "CLIP"        ( a1 n1 -- a1 n1' )   \ clip a string to between 0 and MAXCOUNTED
+2B : PLACE         ( addr len dest -- )
+46 : +PLACE        ( addr len dest -- ) \ append string addr,len to counted
+6C : C+PLACE       ( c1 a1 -- )    \ append char c1 to the counted string at a1
+20 : OFF     0! ;
+D : BLANK         ( addr len -- )     \ fill addr for len with spaces (blanks)
+B3 : UPC  ( c -- c' )
+19 : (D.)          ( d -- addr len )       TUCK DABS  <# #S ROT SIGN #> ;
+55 : H.R           ( n1 n2 -- )    \ display n1 as a hex number right
+52 : H.N           ( n1 n2 -- )    \ display n1 as a HEX number of n2 digits
+7E : DEFAULT-16BIT ( -- )
+D : DEFAULT-32BIT ( -- )
+A9 : >S            ( A1 N1 -- )
+1D : 0>S           ( -- )  \ RESET S-BUF
+1A : SSPACES       ( N1 -- )
+1D : SSPACE        ( -- )
+19 : EMIT>S        ( C1 -- )
+20 : S>            ( -- A1 N1 )
+24 : (.S")         ( addr len -- )
+1C : .S"           ( 'TEXT' -- )
+35 : D.R>S         ( D W -- )
+2D : .R>S          ( N W -- )
+22 : U.R>S         ( U W -- )
+1B : H.>S          ( U -- )
+41 : H.R>S           ( N1 N2 -- )
+55 : ?.NAME>S      ( CFA -- )
+F8 : @+  ( ADDR -- ADDR N )  DUP CELL+ SWAP @ ;
+10 : W@+ ( ADDR -- ADDR N )  DUP 2 + SWAP W@ ;
+13 : SEXT  ( BYTE -- N )  DUP 128 AND IF 0xFFFFFF00 OR THEN ;
+1F : MOD/SIB ( MOD-R-R/M -- R/M R MOD ) \ R INCLUDING GENERAL, SPECIAL, SEGMENT, MMX
+1F : ???   ( N1 -- )
+18 : SS. ( N ADR LEN W )  >R DROP  SWAP R@ * +  R> >S SSPACE ;
+31 : TTTN ( CODE -- ) 15 AND S" O NOB AEE NEBEA S NSP NPL GELEG " 2 SS. ;
+45 : SREG  ( SREG -- )  3 RSHIFT 7 AND S" ESCSSSDSFSGSXXXX" 2 SS. ;
+33 : CREG  ( EEE --  )  3 RSHIFT 7 AND S" CR0???CR2CR3CR4?????????" 3 SS. ;
+38 : DREG  ( EEE --  )  3 RSHIFT 7 AND S" DR0DR1DR2DR3??????DR6DR7" 3 SS. ;
+40 : TREG  ( EEE --  )  3 RSHIFT 7 AND S" ?????????TR3TR4TR5TR6TR7" 3 SS. ; \ OBSOLETE
+40 : MREG  ( N -- )  7 AND S" MM0MM1MM2MM3MM4MM5MM6MM7" 3 SS. ;
+3D : REG8  ( N -- )  7 AND S" ALCLDLBLAHCHDHBH" 2 SS. ;
+38 : REG16 ( N -- )  7 AND S" AXCXDXBXSPBPSIDI" 2 SS. ;
+30 : REG32 ( N -- )  7 AND S" EAXECXEDXEBXESPEBPESIEDI" 3 SS. ;
+38 : REG16/32      ( N -- )
+25 : REG   ( A N -- A )
+34 : [BASE16] ( R/M -- )   4 - S" [SI][DI][BP][BX]" 4 SS. ;
+2D : [IND16]  ( R/M -- )   S" [BX+SI][BX+DI][BP+SI][BP+DI]" 7 SS. ;
+39 : [REG16]  ( R/M -- )   DUP 4 <
+24 : [REG32]  ( N -- )     7 AND S" [EAX][ECX][EDX][EBX][ESP][EBP][ESI][EDI]" 5 SS. ;
+4D : [REG*2]  ( I -- )     S" [EAX*2][ECX*2][EDX*2][EBX*2][XXX*2][EBP*2][ESI*2][EDI*2]" 7 SS. ;
+5B : [REG*4]  ( I -- )     S" [EAX*4][ECX*4][EDX*4][EBX*4][XXX*4][EBP*4][ESI*4][EDI*4]" 7 SS. ;
+50 : [REG*8]  ( I -- )     S" [EAX*8][ECX*8][EDX*8][EBX*8][XXX*8][EBP*8][ESI*8][EDI*8]" 7 SS. ;
+50 : [INDEX]  ( SIB -- )   MOD/SIB OVER 4 =
+89 : DISP8  ( ADR -- ADR' )  COUNT H.>S ;
+19 : DISP16 ( ADR -- ADR' )  W@+ SHOW-NAME ;
+19 : DISP32 ( ADR -- ADR' ) @+ ( BODY> ) SHOW-NAME ;
+18 : DISP16/32 ( ADR -- ADR' )
+27 : .,     ( -- )           .S" , " ;
+15 : .#  ., .S" # " ;
+15 : IMM8   ( ADR -- ADR' )  .# COUNT H.>S ;
+23 : IMM16/32  ( ADR -- ADR' )
+35 : SIB   ( ADR MOD -- ADR )
+A8 : MOD-R/M32     ( ADR R/M MOD -- ADR' )
+E0 : MOD-R/M16     ( ADR R/M MOD -- ADR' )
+D9 : MOD-R/M ( ADR MODR/M -- ADR' )
+25 : R/M8      0 TO SIZE MOD-R/M ;
+1E : R/M16/32  1 TO SIZE MOD-R/M ;
+10 : R/M16     TRUE TO 16-BIT-DATA R/M16/32 ;
+10 : R,R/M  ( ADR -- ADR' )
+22 : R/M,R  ( ADR -- ADR' )
+39 : R/M  ( ADR OP -- ADR' )
+23 : INH   ( -<NAME>- )
+1D6 : AAM   ( ADR CODE -- ADR' )
+2E : AAD   ( ADR CODE -- ADR' )
+30 : D16   ( ADR CODE -- ADR' )
+39 : A16   ( ADR CODE -- ADR' )
+30 : RPZ   ( ADR CODE -- ADR' )
+27 : REP   ( ADR CODE -- ADR' )
+2F : LOK   ( ADR CODE -- ADR' )  \ THIS SHOULD HAVE ERROR CHECKING ADDED
+30 : CS:   ( ADR CODE -- ADR' )
+2F : DS:   ( ADR CODE -- ADR' )
+20 : SS:   ( ADR CODE -- ADR' )
+20 : ES:   ( ADR CODE -- ADR' )
+20 : GS:   ( ADR CODE -- ADR' )
+20 : FS:   ( ADR CODE -- ADR' )
+20 : ISD   ( ADR CODE -- ADR' )
+41 : OSD   ( ADR CODE -- ADR' )
+52 : INP   ( ADDR CODE -- ADDR' )
+8F : OTP   ( ADDR CODE -- ADDR' )
+9E : IND   ( ADDR CODE -- ADDR' )
+77 : OTD   ( ADDR CODE -- ADDR' )
+80 : .ALU  ( N -- )
+4E : ALU  ( ADR OP -- ADR' )
+1F : ALI ( ADR OP -- ADR' )
+98 : ALA  ( ADR OP -- ADR' )
+4A : TXB   ( ADDR OP -- ADDR' )
+7E : TST   ( ADDR OP -- ADDR' )
+87 : INC  ( ADDR OP -- ADDR' )
+1F : DEC  ( ADDR OP -- ADDR' )
+20 : PSH   ( ADDR OP -- ADDR' )
+20 : POP   ( ADDR OP -- ADDR' )
+20 : PSS   ( ADDR OP -- ADDR' )
+20 : PPS   ( ADDR OP -- ADDR' )
+20 : PSA   ( ADDR OP -- ADDR' )
+47 : PPA   ( ADDR OP -- ADDR' )
+50 : PSI   ( ADDR OP -- ADDR' )
+41 : PSF   ( ADDR OP -- ADDR' )
+4F : PPF   ( ADDR OP -- ADDR' )
+50 : 8F.   ( ADDR OP -- ADDR' )
+35 : MOV  ( ADDR OP -- ADDR' )
+24 : MRI  ( ADDR OP -- ADDR' ) ( MOV REGISTER, IMM )
+3F : MVI  ( ADR OP -- ADR' )   ( MOV MEM, IMM )
+46 : MRS   ( ADDR OP -- ADDR' )
+55 : MSR   ( ADDR OP -- ADDR' )
+60 : MRC   ( ADDR OP -- ADDR' )
+4B : MCR   ( ADDR OP -- ADDR' )
+40 : MRD   ( ADDR OP -- ADDR' )
+40 : MDR   ( ADDR OP -- ADDR' )
+40 : MRT   ( ADDR OP -- ADDR' )
+40 : MTR   ( ADDR OP -- ADDR' )
+40 : MV1   ( ADDR OP -- ADDR' )
+77 : MV2   ( ADDR OP -- ADDR' )
+8E : LEA  ( ADDR OP -- ADDR' )
+36 : LXS   ( ADDR OP -- ADDR' )
+4A : BND  ( ADDR OP -- ADDR' )
+36 : ARP   ( ADDR OP -- ADDR' )
+3A : MLI   ( ADDR OP -- ADDR' )
+6A : >MAX_R  DUP MAX_REFERENCE UMAX TO MAX_REFERENCE ;
+21 : REL8  ( ADDR OP -- ADDR' )
+26 : REL16/32 ( ADDR OP -- ADDR' )
+40 : JSR  ( ADDR OP -- ADDR' )
+2B : JMP  ( ADDR OP -- ADDR' )
+32 : .JXX  ( ADDR OP -- ADDR' )
+31 : BRA  ( ADDR OP -- ADDR' )
+18 : LUP  ( ADDR OP -- ADDR' )
+4F : LBR  ( ADDR OP -- ADDR' )
+11 : RTN  ( ADDR OP -- ADDR' )
+36 : RTF  ( ADDR OP -- ADDR' )
+3F : ENT  ( ADDR OP -- ADDR' )
+35 : CIS   ( ADDR OP -- ADDR' )
+97 : NT3   ( ADDR OP -- ADDR' )
+21 : INT   ( ADDR OP -- ADDR' )
+54 : STR   INH DOES> COUNT >S  1 AND IF .S" D" ELSE .S" B" THEN ;
+9C : XGA  ( ADDR OP -- ADDR' )
+23 : .SHIFT ( N -- )
+45 : SHF  ( ADDR OP -- ADDR' )
+8F : WF1  ( ADDR -- ADDR' )
+E4 : WF2  ( ADDR -- ADDR' )
+9B : WF3  ( ADDR -- ADDR' )
+B3 : WF4  ( ADDR -- ADDR' )
+58 : FWAITOPS   ( ADDR OP -- ADDR' )
+89 : W8F   ( ADDR OP -- ADDR' )
+48 : FALU1   ( XOPCODE -- )
+59 : FALU5   ( XOPCODE -- )
+60 : STI.   ( OP -- )
+3A : FD8   ( ADDR OPCODE -- ADDR' )
+81 : FDC   ( ADDR OPCODE -- ADDR' )
+68 : FNULLARY-F   ( OP -- )
+AC : FNULLARY-E   ( OP -- )
+B0 : FNULLARY   ( OP -- )
+56 : FD9   ( ADDR OP -- ADDR' )
+1CF : FALU3   ( OP -- )
+64 : FCMOVA  ( OP -- )
+58 : FDA   ( ADDR OP -- )
+83 : FALU7  ( OP -- )
+5A : FDE   ( ADDR OP -- ADDR' )
+7E : FCMOVB  ( OP -- )
+6D : FDB   ( ADDR OP -- ADDR' )
+197 : FALU6  ( OP -- )
+5E : FDD   ( ADDR OP -- ADDR' )
+16B : FDF   ( ADDR OP -- ADDR' )
+226 : GP6 ( ADDR OP -- ADDR' )
+70 : GP7 ( ADDR OP -- ADDR' )
+A1 : BTX.  ( N -- )
+45 : GP8 ( ADDR OP -- ADDR' )
+26 : LAR ( ADDR OP -- ADDR' )
+2E : LSL ( ADDR OP -- ADDR' )
+20 : LSS ( ADDR OP -- ADDR' )
+20 : LFS ( ADDR OP -- ADDR' )
+20 : LGS ( ADDR OP -- ADDR' )
+20 : BTX ( ADDR OP -- ADDR' )
+B : SLI ( ADDR OP -- ADDR' )
+2A : SRI ( ADDR OP -- ADDR' )
+30 : SLC ( ADDR OP -- ADDR' )
+3B : SRC ( ADDR OP -- ADDR' )
+30 : IML ( ADDR OP -- ADDR' )
+20 : CXC ( ADDR OP -- ADDR' )
+2A : MVX ( ADDR OP -- ADDR' )
+109 : XAD ( ADDR OP -- ADDR' )
+37 : BSF ( ADDR OP -- ADDR' )
+26 : BSR ( ADDR OP -- ADDR' )
+20 : CX8 ( ADDR OP -- ADDR' )
+28 : BSP ( ADDR OP -- ADDR' )
+22 : F6.  ( ADDR OP -- ADDR' )
+9D : FE.  ( ADDR OP -- ADDR' )
+97 : FF.  ( ADDR OP -- ADDR' )
+16A : SET   ( ADR OP -- )
+3E : CMV   ( ADR OP -- )
+41 : MMX-SIZE ( OP -- )
+2A : UPL   ( ADR OP -- ADR' )
+4C : UPH   ( ADR OP -- ADR' )
+40 : CGT   ( ADR OP -- ADR' )
+20 : CEQ   ( ADR OP -- ADR' )
+20 : PSH.  ( OP -- )
+7E : GPA   ( ADR OP -- ADR' )
+44 : PUW   ( ADR OP -- ADR' )
+22 : PSB   ( ADR OP -- ADR' )
+30 : PSW   ( ADR OP -- ADR' )
+30 : MPD   ( ADR OP -- ADR' )
+64 : MDP   ( ADR OP -- ADR' )
+68 : MPQ   ( ADR OP -- ADR' )
+23 : MQP   ( ADR OP -- ADR' )
+20 : SHX   ( ADR OP -- ADR' )
+26 : MLL   ( ADR OP -- ADR' )
+2A : MLH   ( ADR OP -- ADR' )
+20 : MAD   ( ADR OP -- ADR' )
+20 : SUS   ( ADR OP -- ADR' )
+1D : SBS   ( ADR OP -- ADR' )
+24 : SUB   ( ADR OP -- ADR' )
+3A : AUS   ( ADR OP -- ADR' )
+22 : ADS   ( ADR OP -- ADR' )
+24 : ADD   ( ADR OP -- ADR' )
+3A : PAD   ( ADR OP -- ADR' )
+25 : POR   ( ADR OP -- ADR' )
+20 : PAN   ( ADR OP -- ADR' )
+20 : PXR   ( ADR OP -- ADR' )
+20 : OPS 0x10 0 DO ' , LOOP ;
+440 : 0F.  ( ADR CODE -- )
+458 : DIS-OP  ( ADR -- ADR' )
+96 : X".  ( ADDR -- ADDR' )
+23 : FLIT10. ( ADDR -- ADDR' )
+A0 : FLIT8.  ( ADDR -- ADDR' )
+A0 : VECT. ( ADDR -- ADDR' )
+81 : CONS. ( ADDR -- ADDR' )
+6D : USER. ( ADDR -- ADDR' )
+7C : UVAL. ( ADDR -- ADDR' )
+78 : CODE. ( ADDR -- ADDR' )
+29 : INST  ( ADR -- ADR' )
+262 : DIS-DB   CR .S" DB " COUNT H.>S ;
+28 : DIS-DW   CR .S" DW " W@+ H.>S ;
+29 : DIS-DD   CR .S" DD " @+ H.>S ;
+28 : DIS-DS   CR .S" STRING " 0x22 EMIT>S COUNT 2DUP >S + 0x22 EMIT>S ;
+59 : DIS  ( ADR -- )
+E8 : REST          ( ADR -- )
+17F : SEE       ( -- ) Ok
+
+REQUIRE F.	lib\include\float2.f
+92 : 2e 2.E ;
+12 : 1e 1.E ;
+8 : .e .E ;
+19 : PRECISION ( -- u )
+11 : SET-PRECISION ( u -- )
+34 : PRINT-EXP TRUE ?PRINT-EXP ! ;
+22 : PRINT-FIX FALSE ?PRINT-EXP ! ;
+20 : FSINGLE 4 F-SIZE ! ;
+20 : FDOUBLE 8 F-SIZE ! ;
+20 : FLONG 10  F-SIZE ! ;
+20 : FLOATS F-SIZE @ * ;
+1A : FLOAT+ F-SIZE @ + ;
+A : FSTATE  \ *
+166 : stackIsEmpty
+2A : DF, ( F: r -- )
+49 : SF, ( F: r -- )
+54 : FINF FINF-ADDR F@ ;
+1D : F!
+15 : F@
+13 : F, ( F: r -- )
+D : TNUM ( addr u -- d )       \ *
+2A : F10X ( u -- R: 10^u )
+77 : FACOSH   FDUP FDUP F* 1.E F- FSQRT F+ FLN ;    
+1E : SEARCH-EXP ( c-addr1 u -- c-addr2 u flag )
+77 : GET-EXP ( addr u -- d )    \ *
+8A : FRAC>F ( addr u -- F: r )              \ использует 2 регистра FPU
+D5 : >FLOAT-ABS  ( addr u -- F: r D:  bool )
+AD : CHECK-SET ( addr u max min addr2 u2 -- addr2 u2 bool )
+12A : <SIGN> ( addr u max min -- addr2 u2 bool )
+1D : <EXP> ( addr u max min -- addr2 u2 bool )
+12 : <DOT> ( addr u max min -- addr2 u2 bool )
+1D : <DIGITS> ( addr u max min -- addr2 u2 bool )
+19 : ?FLOAT ( addr u -- bool )
+C4 : >FLOAT ( addr u -- F: r true | false )
+86 : FABORT
+7C : FLOOR ( F: r1 -- r2 )
+23 : FROUND ( F: r1 -- r2 )
+20 : #EXP ( -- n ) ( r -- r )  FDUP F0=  IF PRECISION  ELSE
+3E : FN^10 ( n --) ( r -- r1 )
+82 : REPRESENT ( c-addr u -- n f1 f2 )
+102 : Buf+word ( addr u )
+61 : +Count ( char -- )
+4E : FDISPLAY ( n -- )
+6F : format-exp ( ud1 -- ud2 ) \ *
+6F : .EXP
+64 : FS. ( r -- )
+81 : Adjust ( n - n' 1|2|3 )
+30 : FE. ( r)
+7A : fnormalize-big ( F: r -- F: r1 u ) \ *
+34 : fnormalize-small ( F: r -- r1 u ) \ *
+34 : FLOAT<1 ( -- f )
+3F : fprint-frac ( F: r D: u -- )
+BD : fprint-high ( F: r -- )
+19 : fprint-noexp ( F: r -- )
+B7 : fprint-exp ( F: r -- )
+CD : >FNUM ( F: r  -- addr u )
+11A : F. ( F: r -- )
+37 : DFLOAT+ ( addr1 -- addr2 )
+4 : DFLOATS ( n1 -- n2 )
+10 : SFLOAT+ ( addr1 -- addr2 )
+10 : SFLOATS ( n1 -- n2 )
+10 : FLIT,
+37 : FLITERAL ( F: r -- )
+15 : F~ ( F1 F2 F3 -- FLAG ) \ FLOAT-EXT
+9C : FALOG  \ *
+16 : FSINH \ *
+2A : FCOSH    FEXP FDUP 1.E FSWAP F/ F+ 2.E F/ ;
+20 : FTANH    2.E F* FEXPM1 FDUP 2.E F+ F/ ;
+26 : FATANH   FDUP F0< >R FABS 1.E FOVER F- F/  2.E F* FLNP1 2.E F/
+56 : FASINH   FDUP FDUP F* 1.E F+ FSQRT F/ FATANH ;
+1C : FTO 
+72 : HIGH-FINIT
+46 : FALIGN
+5 : FALIGNED 
+10 : SFALIGN
+10 : SFALIGNED
+10 : DFALIGN
+10 : DFALIGNED
+10 : FVARIABLE 
+1C : FCONSTANT   \ *
+20 : FVALUE FCONSTANT ;
+9 : NOTFOUND ( c-addr u -- )
+REQUIRE MDSW:	~af\lib\4interp.f
+C3 : DO-MDSW:
+83 : MDSW:
+2E : DO-MDSW;
+73 : MDSW; 
+2D MDSW: DO  DO
+11 MDSW: ?DO ?DO
+10 MDSW; LOOP LOOP
+10 MDSW; +LOOP +LOOP
+10 MDSW: BEGIN BEGIN
+10 MDSW; UNTIL UNTIL
+10 MDSW; AGAIN AGAIN
+10 MDSW; REPEAT REPEAT
+10 MDSW: IF IF
+10 MDSW; THEN THEN
+REQUIRE (*	~af\lib\comments.f
+10 : (*  ( -- )
+REQUIRE [[	~yz\lib\automate.f
+REQUIRE {          lib/ext/locals.f
+REQUIRE IID_NULL   ~yz/lib/uuid.f
+REQUIRE  " ~yz/lib/common.f
+117 : ComInit ( -- ?)
+23 : ComDestroy
+CE : >clsid ( z a -- )
+32 : clsid, ( z --)
+26 : prog>clsid ( z a -- ?)
+25 : CLSID ( z; ->bl ) CREATE clsid, ;
+B : guid= ( guid1 guid2 -- ?)  16 TUCK COMPARE 0= ;
+D8 : .guid ( a -- )
+REQUIRE IDispatch  ~yz/lib/idispatch.f
+REQUIRE IID_IUnknown ~yz/lib/interfaces.f
+38 : Interface: ( род.интерфейс -- 'methods# ; ->bl)
+5B : Interface; ( 'methods# --)
+11 : Invoke  ( ... interface method# -- ... ) CELLS OVER @ + @ API-CALL ;
+1E : Method:  ( 'methods# -- 'methods#; ->bl)
+37 : single-method ( method# -- ; ->bl)
+7C : release ( iunk -- ) ::Release DROP ;
+REQUIRE variant!   ~yz/lib/variant.f
+401 : byref  0x4000 OR ;
+23B : init-variant ( var -- ) VariantInit DROP ;
+18 : clear-variant ( var -- ) VariantClear DROP ;
+10 : variant@ ( var -- value/dvalue type) 
+144 : variant! ( value/dvalue type var -- ) 
+120 : drop-valtype ( value type --)
+40 : coerce-variant ( var newtype -- ?)
+1B : copy-variant ( var1 var2 -- )
+11 : >bstr ( z -- bstr) >unicodebuf DUP SysAllocString SWAP FREEMEM ;
+DA : CreateObject ( progid -- idisp 0 / error)
+AC : GetObject ( progid -- idisp 0 / error )
+130 : ?CreateObject ( progid -- idisp 0 / error)
+FE : ObjectFromFile ( z -- idisp 0 / error )
+13C : name>dispid ( zname idisp -- id 0 / error ) 
+1AD : new-arglist ( -- )
+5F : next-var ( -- )
+43 : end-arglist ( -- )
+1D : ?move-to-var ( -- )
+70 : free-arglist ( -- )
+B0 : mark-stack  DEPTH mark ! ;
+1E : (prop@) ( id obj -- errcode)
+EB : PROP@ ( name obj -- res / )
+8D : PROP! ( name obj -- )
+A6 : resolve-last-name
+7B : new-name ( a n --)
+29 : (]]) ( -- val/dval)
+23 : ]] ( order... / -- val/dval / )
+30 : NOTFOUND ( a n -- )
+30 : { ( ... -- )
+1C : } ( a n -- ... )
+45 : (() 
+F : ( ( order... -- )
+41 : (=) \ -- 
+34 : = \ order... -- 
+3C : *  \ --
+17 : ())
+1D : ) ( -- order...)
+3C : , ( ... -- )
+14 : TRUE ( -- val type)  -1 _bool ;
+13 : FALSE ( -- val type)  0 _bool ;
+20 : NIL ( -- val type) DISP_E_PARAMNOTFOUND _err ;
+20 : " ( -- val type )
+3E : STRING ( a n -- )
+55 : ASCIIZ ( z -- )
+23 : "" ( -- val/dval )  "" _str ;
+1A : $ ( n -- )
+44 : >DATE ( z _str -- )
+39 : OBJECT ( obj -- )
+29 : (=]]) ( ... -- )
+3F : ]] 
+33 : ([[) ( obj -- )
+30 : [[ ( -- order... )
+3C : collection? ( obj -- ? )
+50 : (get-enumerator) ( obj -- 0 / ienum ienum)
+C3 : (next)  ( var enum -- 0 ok / 1 no more) 
+2B : (MLIT,)   R> DUP @ >R CELL+ >R ;
+1A : make-variant ( -- var)
+1D : OBJ-I ( -- val )
+26 : OBJ-J ( -- val )
+30 : LEAVE-FOREACH
+2A : FOREACH ( compile: -- adr1 adr2 adr3 "fore"; obj -- )
+DC : NEXT ( compile: adr1 adr2 adr3 " fore" -- ; -- )
+6F : ?type-error ( 0/error -- )
+REQUIRE SLITERAL2	~af\lib\sliteral2.f
+REQUIRE REPLACE-WORD lib\ext\patch.f
+1E5 : SLITERAL2 \ § ¬Ґ­  бв ­¤ ав­®Ј® SLITERAL -
+73 MDSW: FOREACH FOREACH
+C MDSW; NEXT NEXT
+10 : >_double ( -- d ; f: f -- )
+13 : _double> ( d -- ; f: -- f )
+REQUIRE AddToRFL	~af\lib\rfl.f
+REQUIRE {                 devel\~af\lib\locals.f
+REQUIRE GetIniString      devel\~af\lib\ini.f
+REQUIRE USES              devel\~af\lib\api-func.f
+REQUIRE FileExist         devel\~af\lib\fileexist.f
+7B : FileExist ( addr u -- flag )
+REQUIRE STR@              devel\~ac\lib\str2.f
+REQUIRE { ~ac/lib/locals.f
+B0 : sAddr ( s -- addr )
+2C : STR@ ( s -- addr u )
+26 : STRHERE ( s -- addr )
+11 : STRALLOT ( n s -- addr )
+126 : STR+ ( addr u s -- )
+42 : STR! ( addr u s -- )
+1B : STRBUF ( -- s )
+6A : "" ( -- s )"" isn't unique
+
+D : STRFREE ( s -- )
+3C : LSTRFREE ( -- )
+20 : STR_EVAL ( addr u s -- )
+29E : (") ( addr u -- s )
+13D : _STRLITERAL ( -- s )
+3C : STRLITERAL ( addr u -- )
+73 : CRLF
+1D : ''
+30 : STR@LOCAL ( addr u -- addr u )
+2CB : PARSE"
+1D9 : " ( "ccc" -- )" isn't unique
+
+E : STYPE
+1B : FILE ( addr u -- addr1 u1 )
+BC : S'
+24 : S@ ( addr u -- addr2 u2 )
+15 : EVAL-FILE ( addr u -- addr1 u1 )
+10 : S! ( addr u var_addr -- )
+2A : S+
+REQUIRE PAllocSupport     devel\~af\lib\pallocate.f
+F9 : HEAP-PROCESS-COPY ( addr u -- addr1 )
+46 : AddRFLNode ( addr u -- )
+6C : LoadRFList ( -- )
+E4 : SaveRFList ( -- ) { \ cnum tmp -- }
+EC : MoveToTopRFL ( node -- )
+7C : SeekInRFL ( addr u -- node true\ false )
+107 : ShowRFLMenu ( -- ) { \ tmp -- }
+1AD : ClearRFLMenu ( -- )
+AF : CreateRFL ( addr_ini addr_section -- )
+31 : FreeRFL ( -- )
+68 : RefreshMenu ( -- )
+13 : AddToRFL ( addr u -- )
+41 : RFLClick? ( id -- addr u true \ false )
+REQUIRE STR@	~ac\lib\str2.f
+REQUIRE CASE	lib\ext\case.f
+REQUIRE Z\"	~mak\~af\lib\c\zstring.f
+C9 : CZMOVE ( a # z --) 2DUP + >R SWAP CMOVE R> 0 SWAP C! ;CZMOVE isn't unique
+
+84 : zchar ( --c/0) counter @ 1 <
+45 : unchar  counter 1+! -1 fromadr +! ;
+1B : c> ( c--) toadr @ C!  toadr 1+! ;
+22 : escape ( c--c )
+105 : ESC-CZMOVE ( a # to --)
+5A : ALITERAL  R> DUP DUP C@ + >R 1+ ;
+21 : Z\LITERAL ( addr u -- \ a) \ ў аҐ¦Ё¬Ґ Ё­вҐаЇаҐв жЁЁ ў®§ўа й Ґв  ¤аҐб
+7B : ZLITERAL ( addr u -- \ a)
+83 : Z" ( -->") [CHAR] " PARSE [COMPILE] ZLITERAL ; IMMEDIATEZ" isn't unique
+
+1D : Z\" ( -->") [CHAR] " PARSE [COMPILE] Z\LITERAL ; IMMEDIATE
+C654E3 : (TB-BUTTON) ( idCommand iBitmap -- addr)
+67 : TB-BUTTON ( idCommand iBitmap -- )
+32 : TB-CHECK  ( idCommand iBitmap -- )
+30 : TB-SEP
+FF39B35C : LruAddr ( n -- addr )
+F : NextLru
+2F : PrevLru
+39 : AddToLru ( addr u )
+6A : UpLru ( -- addr u )
+23 : DownLru ( -- addr u )
+30 : LruList
+D58 : LOWORD ( lpar -- loword ) 0x0FFFF AND ;
+C : HIWORD ( lpar -- hiword ) 0x10 RSHIFT ;
+E : SendToCl ( lParam wParam Msg -- u )  clhwnd SendMessage ;
+6D : SendToClVoid  SendToCl DROP ;
+1B : SendToEd ( lParam wParam Msg -- u )  edhwnd SendMessage ;
+15 : SendToEdVoid  SendToEd DROP ;
+1B : SendToTB ( lParam wParam Msg -- u )  TBhwnd SendMessage ;
+15 : SendToTBVoid  SendToTB DROP ;
+1B : GETLINECOUNT ( -- n ) \ возвращает число строк в консоли
+23 : LastLineIndex ( -- n)
+22 : CurrentLine ( -- n) \ возвращает номер текущей строки
+2E : CursorHome
+20 : GetClTextLength ( -- n) \ возвращает длину текста в консоли
+20 : FlushJetBuf ( -- )
+1C6 : charout ( c --)
+3E : charout1 ( c -- )  1 SWAP WM_CHAR SendToClVoid ;
+25 : concr ( c -- )   FlushJetBuf charout1 ;
+13 : conemit1 ( c --)
+63 : EMIT-ON TRUE TO EnableEmit ['] conemit1 TO conemit ;
+17 : EMIT-OFF FALSE TO EnableEmit ['] DROP TO conemit ;
+20 : TYPE-GUI ( addr u -- )
+C9 : R_E_WAIT_  ( handle -- ) 
+73 : KEY-GUI ( -- u )
+73 : KEY?-GUI ( -- f )
+2F : LastLineChange ( addr -- )
+8B : GetPrompt \ кладет содержимое последней строки в буфер - промпт
+B0 : (VK_RETURN)
+49 : (VK_RETURN2)
+2D : TOtib ( addr u -- )
+44 : VOC-NAME> ( wid -- s ) \ имя списка слов, если он именован
+7D : SetMenuStatus { idMenu idButton status -- }
+110 : RefreshMenus { \ st curtls -- }
+233 : conaccept
+A8 : OpenFile ( -- addr u t | f)
+147 : SaveScript { \ SizeEd Content fid -- }
+E0 : LoadScript { \ SizeEd Content fid -- }
+11E : W>S DUP 0x8000 AND IF 0x10000 - THEN ;
+1C : ReSize { \ cury [ RECT::/SIZE ] Rect -- }
+401 : DrawSplitter { \ hdc }
+238 : BYE-BYE  0 0 WM_DESTROY Myhwnd SendMessage DROP ;
+32 : ClearFavoritesMenu
+C9 : FillFavoritesMenu { \ LastFavorit -- }
+D2 : EXECUTEFavorite ( IDItem -- )
+12E : RefreshFavorites
+16 : RR
+6E : DoCommand ( wnd_id -- )
+3C4 : SaveIni { \ t1 [ RECT::/SIZE ] Rect -- }
+182 : CreateMainMenu ( -- hmenu )
+B3A : WMLBUTTONDOWN { hwnd wy \ [ RECT::/SIZE ] rect [ POINT::/SIZE ] point }
+1294 : MessageLoop
+203 : getxy ( -- x y )
+2B : CON-MAIN
+7411 : CONSOLE
+137 : BYE
+REQUIRE [DEFINED]  lib\include\tools.f
+FFDF7AAB : relocate ( adr xt -- ) 
+99 : relocate3 ( leaf --) IMAGE-SIZE BASEOFCODE + SWAP +! ;
+47 : relocate2 ( dir -- ) ['] relocate3 relocate ;
+33 : relocate1 ( dir -- ) ['] relocate2 relocate ;
+30 : XHERE YDP @ HERE UMAX ;
+35 : YALIGN YDP><DP ALIGN YDP><DP ;
+2A : XALIGN HERE YDP @ U< IF YALIGN EXIT THEN ALIGN ;
+3F : YALLOT YDP><DP ALLOT YDP><DP ;
+31 : XALLOT HERE YDP @ U< IF YALLOT EXIT THEN ALLOT ;
+3F : ADD-RES ( addr u -- )
+9A :  XXXX-
+4E : SAVE ( offset c-addr u -- )
+ DYDP= -302267 Z=58F3C5 Z=58F400 R=spf4wc.fres Z=590C00 Z=590C00 

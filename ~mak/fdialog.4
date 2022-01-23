@@ -1,0 +1,80 @@
+REQUIRE [IFNDEF] ~nn\lib\ifdef.f
+REQUIRE API_1: lib\WAPI.4
+
+
+[IFNDEF] COMDLG32DLL
+CR .( LIB LOAD=)  S" COMDLG32.DLL" DROP DLL_L DUP H.
+DUP 0= [IF] .( COMDLG32.DLL LOAD ERROR) ABORT [THEN]
+CONSTANT COMDLG32DLL
+[THEN]
+
+\- #define : #define  HEADER  CONSTANT-CODE COMPILE,  0 PARSE EVALUATE , ; 
+\- ?#define : ?#define >IN @  POSTPONE [DEFINED]  IF DROP POSTPONE \ BREAK >IN ! #define  ;
+
+COMDLG32DLL XAPI1: GetOpenFileNameA GetOpenFileNameA
+COMDLG32DLL XAPI1: GetSaveFileNameA GetSaveFileNameA
+
+KERNEL32DLL XAPI1: GetModuleHandleA	GetModuleHandleA
+
+\- OFN_EXPLORER  0x80000  CONSTANT OFN_EXPLORER
+
+#define OFN_ENABLEHOOK               0x00000020
+#define OFN_ENABLETEMPLATE           0x00000040
+#define OFN_ALLOWMULTISELECT         0x00000200
+
+CREATE LPSTRFILTER
+  S" All files (*.*)"  S,  0 C,   S" *.*"  S,  0 C, 
+  S" Forth"  S,  0 C,   S" *.4;*.f;*.4th;*.fth;*.txt"  S,   0 C,
+  S" C"  S,  0 C,   S" *.c;*.h"  S,   0 C,
+ 0 C,
+
+\- IMAGE-BASE 0 GetModuleHandleA CONSTANT IMAGE-BASE
+
+CREATE LPSTRFILE 260 ALLOT
+
+CREATE OFD_STR
+
+ 0x88 L, 0 L,	\ lStructSize
+ 0 ,	\ hwndOwner
+ 0 ,	\ hInstance
+ LPSTRFILTER ,	\ lpstrFilter
+ 0 ,	\ lpstrCustomFilter
+ 0 L,	\ nMaxCustFilter
+ 0 L,	\ nFilterIndex 
+ LPSTRFILE , \ nFilterIndex
+ 260 L, 0 L,	\ nMaxFile
+ 0 ,	\ lpstrFileTitle
+ 0 L,  0 L,	\ nMaxFileTitle
+ 0 ,	\ lpstrInitialDir
+ 0 ,	\ lpstrTitle
+ OFN_EXPLORER
+\ OFN_ENABLEHOOK
+\ OFN_ALLOWMULTISELECT \ 0x200
+\ 0x80000000 ?
+\ 0
+ L,	\ Flags
+ 0 W,	\   nFileOffset
+ 0 W,	\   nFileExtension
+ 0 ,	\ lpstrDefExt
+ 0 L, 0 L, \ lCustData
+ 0 ,	\ lpfnHook
+ 0 ,	\ lpTemplateName
+ 0 ,	\ pvReserved
+ 0 L,	\ dwReserved
+ 0 L,	\ FlagsEx
+
+ HERE OFD_STR - OFD_STR C!
+\ EOF  tst
+
+\ OFD_STR GetOpenFileNameA
+
+
+: FileDLG0
+\  DIR_STOR DIR_SIZE GetCurrentDirectoryA DROP
+\  DUP>R
+    OFD_STR GetOpenFileNameA DROP  LPSTRFILE DUP
+\ RDROP
+\  DIR_STOR  SetCurrentDirectoryA DROP
+;
+
+\ https://board.flatassembler.net/topic.php?t=16748

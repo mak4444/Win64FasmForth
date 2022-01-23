@@ -1,0 +1,19 @@
+0xf0000 ALLOCATE THROW DUP  YDP0 ! YDP !
+ 
+REQUIRE DBG_INCLUDED lib\include\spf_navigator.f 
+
+REQUIRE DISP ~mak/amd64/disasm.fs 
+ samples\WIN\EDIT\ED.F 
+
+E> E>
+
+\ EDIT
+
+\EOF
+REQUIRE { ~mak\locals.f
+
+  : TEST { a b c d \ e f -- } a . b . c .  b c + -> e  e .  f .  ^ a @ . ;
+
+\ FDIALOG_P  399 DUMP
+
+\ OFStruct

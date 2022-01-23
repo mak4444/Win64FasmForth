@@ -1,0 +1,2117 @@
+include 'win64a.inc'
+include 'macro/if.inc'
+
+;include 'equates\gdi32.inc'
+CLEARTYPE_QUALITY = 5
+IDM_NEW   = 101
+IDM_EXIT  = 102
+IDM_ABOUT = 901
+
+format PE64 console
+;stack 1000000h                ; stack size
+
+; executable at 10000h
+cfa_img_org:
+ 	call	FORTH_ENTRY
+	xor	edi,edi		; exit code 0
+	invoke	ExitProcess,0
+	
+cfa_EMIT_M:
+	mov	[character],al
+	invoke	WriteFile,qword [cfa_HminusSTDOUT+14],character,1,bytes_count,0
+
+	MOV	RAX,[RBP]
+	LEA	RBP,[RBP+8]
+	RET
+
+LastNFA = 0
+
+LastCFA EQU INIT
+
+macro AHEADER FLAG,ID,F_CFA {
+	align 8
+	DQ	F_CFA
+	DQ	FLAG
+	DQ	LastNFA
+The_Nfa = $
+	DB	(F_CFA-The_Nfa-1) and 0FFH
+	DB      ID
+LastNFA = The_Nfa
+F_CFA:
+}
+
+macro cfa_AHEADERP FLAG,ID,F_CFA {
+	align 8
+	DQ	cfa_#F_CFA
+	DQ	FLAG
+	DQ	LastNFA
+The_Nfa = $
+	DB	(lla_#F_CFA-The_Nfa-1) and 0FFH
+	DB      ID
+LastNFA = The_Nfa
+lla_#F_CFA:
+}
+
+macro cfa_AHEADER FLAG,ID,F_CFA {
+	align 8
+	DQ	cfa_#F_CFA and 0FFFFFFFFH
+	DQ	FLAG
+	DQ	LastNFA and 0FFFFFFFFH
+The_Nfa = $
+	DB	(cfa_#F_CFA-The_Nfa-1) and 0FFH
+	DB      ID
+LastNFA = The_Nfa
+cfa_#F_CFA:
+}
+
+
+reserve EQU Mreserve-main_task
+
+FORTH_ENTRY:
+        mov	r14, main_task
+	mov	rbp,SPP
+;	call cfa_XLIT+00H
+; 	DD 090H
+
+	invoke	GetStdHandle,STD_OUTPUT_HANDLE
+
+	mov	[cfa_HminusSTDOUT+14],rax
+
+	invoke	GetStdHandle,STD_ERROR_HANDLE
+
+	mov	[cfa_HminusSTDERR+14],rax
+
+	invoke	GetStdHandle,STD_INPUT_HANDLE
+
+	mov	[cfa_HminusSTDIN+14],rax
+
+	call	cfa_INIT
+
+	ret
+
+TIB_SIZE EQU 1027
+PAD_SIZE EQU 1027
+
+include 'img.asm'
+
+cfa_AHEADER 0 ,'VVV',cfa_VVV
+
+ call cfa_XLIT+00H
+ DD 0270FH
+ call cfa_dot+00H
+ DB 0C3H
+
+AHEADER 0 ,'ZZZ',cfa_ZZZ
+
+ call cfa_XLIT+00H
+ DD 0270FH
+ call cfa_dot+00H
+ DB 0C3H
+
+
+cfa_AHEADER 0,"BYE",BYE
+	xor	edi,edi		; exit code 0
+	invoke	ExitProcess,0
+
+cfa_AHEADER 0,"DUP",DUP
+      	LEA RBP, [RBP-8]          ;	lea    -0x8(%rbp),%rbp
+      	MOV [RBP], RAX          ;	mov    %rax,0x0(%rbp)
+ 	ret
+cfa_AHEADER 0,"DROP",DROP
+; MOV RAX, [RBP]
+     	MOV RAX, [RBP]         ;	mov    0x0(%rbp),%rax
+     	db 48h,8dh,6dh,08         ; 	lea    0x8(%rbp),%rbp
+ 	ret
+cfa_AHEADER 0,"NIP",NIP
+     	db 48h,8dh,6dh,08          ;	lea    0x8(%rbp),%rbp
+     	ret   
+cfa_AHEADER 0,"SWAP",SWAP
+      	db 48h,8bh,55h,00          ;	mov    0x0(%rbp),%rdx
+      	MOV [RBP], RAX          ;	mov    %rax,0x0(%rbp)
+      	db 48h,89h,0d0h             ;	mov    %rdx,%rax
+      	ret   
+cfa_AHEADER 0,"OVER",OVER
+      	LEA RBP, [RBP-8]          ;	lea    -0x8(%rbp),%rbp
+      	MOV [RBP], RAX          ;	mov    %rax,0x0(%rbp)
+      	db 48h,8bh,45h,08          ;	mov    0x8(%rbp),%rax
+      	ret   
+cfa_AHEADER 0,"ROT",ROT
+      	db 48h,8bh,55h,00          ;	mov    0x0(%rbp),%rdx
+      	MOV [RBP], RAX          ;	mov    %rax,0x0(%rbp)
+      	db 48h,8bh,45h,08          ;	mov    0x8(%rbp),%rax
+      	db 48h,89h,55h,08          ;	mov    %rdx,0x8(%rbp)
+      	ret   
+cfa_AHEADER 0,"-ROT",minusROT
+      	db 48h,8bh,55h,08          ;	mov    0x8(%rbp),%rdx
+      	db 48h,89h,45h,08          ;	mov    %rax,0x8(%rbp)
+      	MOV RAX, [RBP]          ;	mov    0x0(%rbp),%rax
+      	db 48h,89h,55h,00          ;	mov    %rdx,0x0(%rbp)
+      	ret   
+cfa_AHEADER 0,"2DUP",_2DUP
+     	db 48h,8bh,55h,00          ;	mov    0x0(%rbp),%rdx
+     	db 48h,89h,45h,0f8h          ;	mov    %rax,-0x8(%rbp)
+     	db 48h,89h,55h,0f0h          ;	mov    %rdx,-0x10(%rbp)
+     	db 48h,8dh,6dh,0f0h          ;	lea    -0x10(%rbp),%rbp
+     	ret   
+cfa_AHEADER 0,"2DROP",_2DROP
+     	db 48h,8bh,45h,08          ;	mov    0x8(%rbp),%rax
+     	db 48h,8dh,6dh,10h          ;	lea    0x10(%rbp),%rbp
+     	ret   
+cfa_AHEADER 0,"2SWAP",_2SWAP
+     	db 48h,8bh,4dh,00          ;	mov    0x0(%rbp),%rcx
+     	db 48h,8bh,55h,08          ;	mov    0x8(%rbp),%rdx
+     	db 48h,8bh,5dh,10h          ;	mov    0x10(%rbp),%rbx
+     	db 48h,89h,4dh,10h          ;	mov    %rcx,0x10(%rbp)
+     	db 48h,89h,45h,08          ;	mov    %rax,0x8(%rbp)
+     	db 48h,89h,5dh,00          ;	mov    %rbx,0x0(%rbp)
+     	db 48h,89h,0d0h             ;	mov    %rdx,%rax
+     	ret   
+cfa_AHEADER 0,"2OVER",_2OVER
+     MOV RDX, [RBP+2*8]
+     MOV [RBP-8], RAX
+     MOV [RBP-2*8], RDX
+     MOV RAX, [RBP+8]
+     LEA RBP, [RBP-2*8]
+     	ret   
+
+
+cfa_AHEADER 0,"PICK",PICK
+     	db 48h,8bh,44h,0c5h,00       ;	mov    0x0(%rbp,%rax,8),%rax
+     	ret   
+
+cfa_AHEADER 0,"RP+@",RPplusa
+     	MOV RAX,  [RSP+RAX+8]
+     	ret   
+
+cfa_AHEADER 0,"TUCK",TUCK
+     	LEA RBP, [RBP-8]          ;	lea    -0x8(%rbp),%rbp
+     	db 48h,8bh,55h,08          ;	mov    0x8(%rbp),%rdx
+     	db 48h,89h,45h,08          ;	mov    %rax,0x8(%rbp)
+     	db 48h,89h,55h,00          ;	mov    %rdx,0x0(%rbp)
+     	ret   
+
+cfa_AHEADER 0,"SL@",SL_ld
+     	db 8bh,00                ;	mov    (%rax),%eax
+     	db 48h,98h                ;	cltq
+     	ret   
+
+cfa_AHEADER 0,"L@",L_ld
+     	db 8bh,00                ;	mov    (%rax),%eax
+;	mov	rdx, 0ffffffffh
+;	and	rax,rdx
+     	ret   
+
+cfa_AHEADER 0,"@",_ld
+     	db 48h,8bh,00             ;	mov    (%rax),%rax
+     	ret   
+cfa_AHEADER 0,"A@",A_ld
+     	db 48h,8bh,00             ;	mov    (%rax),%rax
+     	ret   
+cfa_AHEADER 0,"C@",C_ld
+     	db 0fh,0b6h,00             ;	movzbl (%rax),%eax
+     	ret   
+cfa_AHEADER 0,"W@",W_ld
+     	db 0fh,0b7h,00             ;	movzwl (%rax),%eax
+     	ret   
+cfa_AHEADER 0,"2@",_2_ld
+	MOV     RDX, [RAX+8] 
+	LEA     RBP, [RBP-8] 
+	MOV     [RBP] , RDX 
+	MOV     RAX , [RAX] 
+     	ret   
+cfa_AHEADER 0,"L!",Lsave
+     	db 8bh,55h,00             ;	mov    0x0(%rbp),%edx
+     	db 89h,10h                ;	mov    %edx,(%rax)
+     	db 48h,8bh,45h,08          ;	mov    0x8(%rbp),%rax
+     	db 48h,8dh,6dh,10h          ;	lea    0x10(%rbp),%rbp
+     	ret   
+cfa_AHEADER 0,"!",save
+cfa_Asave:
+     	db 48h,8bh,55h,00          ;	mov    0x0(%rbp),%rdx
+     	db 48h,89h,10h             ;	mov    %rdx,(%rax)
+     	db 48h,8bh,45h,08          ;	mov    0x8(%rbp),%rax
+     	db 48h,8dh,6dh,10h          ;	lea    0x10(%rbp),%rbp
+     	ret   
+cfa_AHEADER 0,"+!",plussave
+     	db 48h,8bh,55h,00          ;	mov    0x0(%rbp),%rdx
+	add	[rax], rdx
+     	db 48h,8bh,45h,08          ;	mov    0x8(%rbp),%rax
+     	db 48h,8dh,6dh,10h          ;	lea    0x10(%rbp),%rbp
+     	ret   
+cfa_AHEADER 0,"C!",Csave
+     	db 8ah,55h,00             ;	mov    0x0(%rbp),%dl
+     	db 88h,10h                ;	mov    %dl,(%rax)
+     	db 48h,8bh,45h,08          ;	mov    0x8(%rbp),%rax
+     	db 48h,8dh,6dh,10h          ;	lea    0x10(%rbp),%rbp
+     	ret   
+cfa_AHEADER 0,"W!",Wsave
+     	db 8bh,55h,00             ;	mov    0x0(%rbp),%edx
+     	db 66h,89h,10h             ;	mov    %dx,(%rax)
+     	db 48h,8bh,45h,08          ;	mov    0x8(%rbp),%rax
+     	db 48h,8dh,6dh,10h          ;	lea    0x10(%rbp),%rbp
+     	ret   
+cfa_AHEADER 0,"0!",_0save
+     	db 48h,0c7h,00h,00h,00h,00h,00 ;	movq   $0x0,(%rax)
+     	MOV RAX, [RBP]          ;	mov    0x0(%rbp),%rax
+     	db 48h,8dh,6dh,08          ;	lea    0x8(%rbp),%rbp
+     	ret   
+cfa_AHEADER 0,"1+!",_1plussave
+     	db 48h,0ffh,00             ;	incq   (%rax)
+     	MOV RAX, [RBP]          ;	mov    0x0(%rbp),%rax
+     	db 48h,8dh,6dh,08          ;	lea    0x8(%rbp),%rbp
+     	ret   
+
+cfa_AHEADER 0,"2!",_2save
+     MOV RDX, [RBP]
+     MOV [RAX], RDX
+     MOV RDX, [RBP+8]
+     MOV [RAX+8], RDX
+     LEA RBP, [RBP+8*3]
+     MOV RAX, [RBP-8]
+     	ret   
+
+
+cfa_AHEADER 0,"=",_equ
+     	db 48h,33h,45h,00          ;	xor    0x0(%rbp),%rax
+     	db 48h,8dh,6dh,08          ;	lea    0x8(%rbp),%rbp
+     	sub    rax,1
+     	sbb    rax,rax
+     	ret   
+cfa_AHEADER 0,"D0=",D0_equ
+     	db 48h,0bh,45h,00          ;	or     0x0(%rbp),%rax
+     	db 48h,8dh,6dh,08          ;	lea    0x8(%rbp),%rbp
+     	db 48h,83h,0e8h,01          ;	sub    $0x1,%rax
+     	db 48h,19h,0c0h             ;	sbb    %rax,%rax
+     	ret   
+cfa_AHEADER 0,"0=",_0_equ
+     	sub    rax,1
+     	sbb    rax,rax
+     	ret   
+cfa_AHEADER 0,"UMIN",UMIN
+     	db 48h,3bh,45h,00         ; 3c3:	cmp    0x0(%rbp),%rax
+	CMOVA	rax,[rbp]
+     	db 48h,8dh,6dh,08         ; 3cd:	lea    0x8(%rbp),%rbp
+	ret   
+
+cfa_AHEADER 0,"UMAX",UMAX
+     	db 48h,3bh,45h,00         ; 3c3:	cmp    0x0(%rbp),%rax
+	CMOVC	rax,[rbp]
+     	db 48h,8dh,6dh,08         ; 3cd:	lea    0x8(%rbp),%rbp
+	ret   
+
+cfa_AHEADER 0,"MIN",MIN
+     	db 48h,3bh,45h,00         ; 3c3:	cmp    0x0(%rbp),%rax
+	CMOVG	rax,[rbp]
+     	db 48h,8dh,6dh,08         ; 3cd:	lea    0x8(%rbp),%rbp
+	ret   
+
+cfa_AHEADER 0,"MAX",MAX
+     	db 48h,3bh,45h,00         ; 3c3:	cmp    0x0(%rbp),%rax
+	CMOVL	rax,[rbp]
+     	db 48h,8dh,6dh,08         ; 3cd:	lea    0x8(%rbp),%rbp
+	ret   
+
+
+cfa_AHEADER 0,"ABS",ABS
+	CQO
+	XOR RAX, RDX
+	SUB RAX, RDX
+;     	db 48h,09h,0c0h            ; 401:	or     %rax,%rax
+;     	js     	cfa_NEGATE
+	ret   
+cfa_AHEADER 0,"NEGATE",NEGATE
+     	db 48h,0f7h,0d8h             ;	neg    %rax
+     	ret   
+cfa_AHEADER 0,"INVERT",INVERT
+     	db 48h,0f7h,0d0h             ;	not    %rax
+     	ret   
+cfa_AHEADER 0,"CHAR+",CHARplus
+     	db 48h,0ffh,0c0h             ;	inc    %rax
+     	ret   
+cfa_AHEADER 0,"1+",_1plus
+     	db 48h,0ffh,0c0h             ;	inc    %rax
+     	ret   
+cfa_AHEADER 0,"1-",_1minus
+     	db 48h,8dh,40h,0ffh          ;	lea    -0x1(%rax),%rax
+     	ret   
+cfa_AHEADER 0,"2-",_2minus
+     	db 48h,8dh,40h,0feh          ;	lea    -0x2(%rax),%rax
+     	ret   
+cfa_AHEADER 0,"2+",_2plus
+     	db 48h,8dh,40h,02          ;	lea    0x2(%rax),%rax
+     	ret   
+
+cfa_AHEADER 0,"2*",_2mul
+	lea    rax,[2*rax]
+     	ret   
+
+cfa_AHEADER 0,"2/",_2div
+	sar    rax,1
+     	ret   
+
+cfa_AHEADER 0,"U2/",U_2div
+	shr    rax,1
+     	ret   
+
+cfa_AHEADER 0,"CELLS",CELLS
+     	db 48h,8dh,04h,0c5h,00h,00h,0,0 ;	lea    0x0(,%rax,8),%rax
+     	ret   
+cfa_AHEADER 0,"CELL-",CELLminus
+     	db 48h,8dh,40h,0f8h         ;	lea    -0x8(%rax),%rax
+     	ret   
+cfa_AHEADER 0,"CELL+",CELLplus
+     	db 48h,8dh,40h,08          ;	lea    0x8(%rax),%rax
+     	ret   
+cfa_AHEADER 0,"QCELL+",QCELLplus
+     	db 48h,8dh,40h,08          ;	lea    0x8(%rax),%rax
+     	ret   
+cfa_AHEADER 0,"COUNT",COUNT
+     	LEA RBP, [RBP-8]         ;	lea    -0x8(%rbp),%rbp
+     	db 48h,8dh,50h,01          ;	lea    0x1(%rax),%rdx
+     	db 48h,0fh,0b6h,00          ;	movzbq (%rax),%rax
+     	db 48h,89h,55h,00          ;	mov    %rdx,0x0(%rbp)
+     	ret   
+cfa_AHEADER 0,"U>D",UgreatD
+     	LEA RBP, [RBP-8]          ;	lea    -0x8(%rbp),%rbp
+     	MOV [RBP], RAX          ;	mov    %rax,0x0(%rbp)
+     	db 48h,31h,0c0h            ;	xor    %rax,%rax
+     	ret   
+cfa_AHEADER 0,"S>D",SgreatD
+     	db 48h,99h               ;	cqto   
+     	LEA RBP, [RBP-8]          ;	lea    -0x8(%rbp),%rbp
+     	MOV [RBP], RAX          ;	mov    %rax,0x0(%rbp)
+     	db 48h,89h,0d0h            ;	mov    %rdx,%rax
+     	ret   
+cfa_AHEADER 0,"D>S",DgreatS
+	jmp cfa_DROP
+cfa_AHEADER 0,"UMrslMOD",UMrslMOD
+     	db 48h,89h,0c1h            ;	mov    %rax,%rcx
+     	db 48h,8bh,55h,00          ;	mov    0x0(%rbp),%rdx
+     	db 48h,8bh,45h,08          ;	mov    0x8(%rbp),%rax
+     	db 48h,0f7h,0f1h            ;	div    %rcx
+     	db 48h,8dh,6dh,08          ;	lea    0x8(%rbp),%rbp
+     	db 48h,89h,55h,00          ;	mov    %rdx,0x0(%rbp)
+     	ret   
+cfa_AHEADER 0,"U/",U_div
+     	db 48h,89h,0c1h            ;	mov    %rax,%rcx
+     	MOV RAX, [RBP]          ;	mov    0x0(%rbp),%rax
+     	db 48h,31h,0d2h            ;	xor    %rdx,%rdx
+     	db 48h,8dh,6dh,08          ;	lea    0x8(%rbp),%rbp
+     	db 48h,0f7h,0f1h            ;	div    %rcx
+     	ret   
+cfa_AHEADER 0,"UM*",UM_mul
+     	db 48h,0f7h,65h,00          ;	mulq   0x0(%rbp)
+     	MOV [RBP], RAX          ;	mov    %rax,0x0(%rbp)
+     	db 48h,89h,0d0h            ;	mov    %rdx,%rax
+     	ret   
+cfa_AHEADER 0,"*",_mul
+
+     	db 48h,0f7h,6dh,00             ;	imulq  0x0(%rbp)
+     	db 48h,8dh,6dh,08          ;	lea    0x8(%rbp),%rbp
+     	ret   
+cfa_AHEADER 0,"M*",Mmul
+     	db 48h,0f7h,6dh,00             ;	imulq  0x0(%rbp)
+     MOV  [RBP], RAX
+     MOV  RAX, RDX 
+     	ret   
+
+cfa_AHEADER 0,"/",_div
+     	db 48h,89h,0c1h            ;	mov    %rax,%rcx
+     	MOV RAX, [RBP]          ;	mov    0x0(%rbp),%rax
+     	db 48h,99h               ;	cqto   
+     	db 48h,0f7h,0f9h            ;	idiv   %rcx
+     	db 48h,8dh,6dh,08          ;	lea    0x8(%rbp),%rbp
+     	ret   
+cfa_AHEADER 0,"MOD",MOD
+     	db 48h,89h,0c1h             ;	mov    %rax,%rcx
+     	MOV RAX, [RBP]          ;	mov    0x0(%rbp),%rax
+     	db 48h,99h               ;	cqto   
+     	db 48h,0f7h,0f9h            ;	idiv   %rcx
+     	db 48h,8dh,6dh,08          ;	lea    0x8(%rbp),%rbp
+     	db 48h,89h,0d0h            ;	mov    %rdx,%rax
+     	ret   
+cfa_AHEADER 0,"/MOD",_divMOD
+     	db 48h,89h,0c1h            ;	mov    %rax,%rcx
+     	MOV RAX, [RBP]          ;	mov    0x0(%rbp),%rax
+     	db 48h,99h               ;	cqto   
+     	db 48h,0f7h,0f9h            ;	idiv   %rcx
+     	db 48h,89h,55h,00          ;	mov    %rdx,0x0(%rbp)
+     	ret   
+cfa_AHEADER 0,"UM/MOD",UM_divMOD
+     	db 48h,89h,0c1h            ;	mov    %rax,%rcx
+     	db 48h,8bh,55h,00          ;	mov    0x0(%rbp),%rdx
+     	db 48h,8bh,45h,08          ;	mov    0x8(%rbp),%rax
+     	db 48h,0f7h,0f1h            ;	div    %rcx
+     	db 48h,8dh,6dh,08          ;	lea    0x8(%rbp),%rbp
+     	db 48h,89h,55h,00          ;	mov    %rdx,0x0(%rbp)
+     	ret   
+
+cfa_AHEADER 0,"*/MOD",_mul_divMOD
+     MOV RCX, RAX
+     MOV RAX, [RBP]
+     	db 48h,0f7h,6dh,08             ;	imulq  8(%rbp)
+     IDIV RCX
+     MOV [RBP+8], RDX
+     LEA RBP, [RBP+8]
+     RET
+
+cfa_AHEADER 0,"FM/MOD",FM_divMOD
+        MOV RCX, RAX
+        MOV RDX, [RBP]
+        MOV RBX, RDX
+        MOV RAX, [RBP+8]
+        IDIV RCX
+        TEST RDX, RDX
+        JZ  @f
+        XOR RBX, RCX
+        JNS @f
+        DEC RAX
+        ADD RDX, RCX
+@@:     LEA RBP, [RBP+8]
+        MOV [RBP], RDX
+     	ret   
+
+cfa_AHEADER 0,"SM/REM",SM_divREM
+     MOV RCX, RAX
+     MOV RDX, [RBP]
+     MOV RAX, [RBP+8]
+     IDIV RCX
+     LEA RBP, [RBP+8]
+     MOV [RBP], RDX
+     RET
+
+cfa_AHEADER 0,"LSHIFT",LSHIFT
+     	db 88h,0c1h               ;	mov    %al,%cl
+     	MOV RAX, [RBP]          ;	mov    0x0(%rbp),%rax
+     	db 48h,0d3h,0e0h            ;	shl    %cl,%rax
+     	db 48h,8dh,6dh,08          ;	lea    0x8(%rbp),%rbp
+     	ret   
+cfa_AHEADER 0,"RSHIFT",RSHIFT
+     	db 88h,0c1h               ;	mov    %al,%cl
+     	MOV RAX, [RBP]          ;	mov    0x0(%rbp),%rax
+     	db 48h,0d3h,0e8h            ;	shr    %cl,%rax
+     	db 48h,8dh,6dh,08          ;	lea    0x8(%rbp),%rbp
+     	ret   
+cfa_AHEADER 0,"ARSHIFT",ARSHIFT
+     	db 88h,0c1h               ;	mov    %al,%cl
+     	MOV RAX, [RBP]          ;	mov    0x0(%rbp),%rax
+     	db 48h,0d3h,0f8h            ;	sar    %cl,%rax
+     	db 48h,8dh,6dh,08          ;	lea    0x8(%rbp),%rbp
+     	ret   
+cfa_AHEADER 0,"?DUP",queDUP
+     	or     rax,rax
+	jne	cfa_DUP
+	ret   
+cfa_AHEADER 0,">",great
+     	db 48h,3bh,45h,00        ;  6e9:	cmp    0x0(%rbp),%rax
+     	db 0fh,9dh,0c0h           ; 6ed:	setge  %al
+     	db 48h,83h,0e0h,01        ;  6f0:	and    $0x1,%rax
+     	db 48h,0ffh,0c8h           ; 6f4:	dec    %rax
+     	db 48h,8dh,6dh,08        ;  6f7:	lea    0x8(%rbp),%rbp
+	ret   
+cfa_AHEADER 0,"<",less
+     	db 48h,3bh,45h,00        ;  70a:	cmp    0x0(%rbp),%rax
+     	db 0fh,9eh,0c0h           ; 70e:	setle  %al
+     	db 48h,83h,0e0h,01        ;  711:	and    $0x1,%rax
+     	db 48h,0ffh,0c8h           ; 715:	dec    %rax
+     	db 48h,8dh,6dh,08        ;  718:	lea    0x8(%rbp),%rbp
+	ret   
+cfa_AHEADER 0,"<>",lessgreat
+     	db 48h,33h,45h,00          ;	xor    0x0(%rbp),%rax
+     	db 48h,0f7h,0d8h            ;	neg    %rax
+     	db 48h,19h,0c0h            ;	sbb    %rax,%rax
+     	db 48h,8dh,6dh,08          ;	lea    0x8(%rbp),%rbp
+     	ret   
+cfa_AHEADER 0,"0<>",_0lessgreat
+     	db 48h,0f7h,0d8h            ;	neg    %rax
+     	db 48h,19h,0c0h            ;	sbb    %rax,%rax
+     	ret   
+cfa_AHEADER 0,"0>",_0great
+     	db 48h,0f7h,0d8h            ;	neg    %rax
+     	db 48h,0c1h,0f8h,3fh         ;	sar    $0x3f,%rax
+     	ret   
+cfa_AHEADER 0,"0<",_0less
+     	db 48h,0c1h,0f8h,3fh         ;	sar    $0x3f,%rax
+     	ret   
+cfa_AHEADER 0,"U>",Ugreat
+     	db 48h,3bh,45h,00          ;	cmp    0x0(%rbp),%rax
+     	db 48h,19h,0c0h            ;	sbb    %rax,%rax
+     	db 48h,8dh,6dh,08          ;	lea    0x8(%rbp),%rbp
+     	ret   
+cfa_AHEADER 0,"U<",Uless
+     	db 48h,39h,45h,00          ;	cmp    %rax,0x0(%rbp)
+     	db 48h,19h,0c0h            ;	sbb    %rax,%rax
+     	db 48h,8dh,6dh,08h         ;	lea    0x8(%rbp),%rbp
+     	ret
+
+cfa_AHEADER 0,"D<",Dless
+     MOV RDX, [RBP]
+     CMP [RBP+8*2], RDX
+     SBB [RBP+8], RAX
+     MOV RAX, 0
+     JGE @f
+	DEC RAX
+@@: LEA RBP, [RBP+8*3]
+
+     	ret
+   
+cfa_AHEADER 0,"WITHIN",WITHIN
+     	db 48h,8bh,55h,08h         ;	mov    0x8(%rbp),%rdx
+     	db 48h,2bh,45h,00h         ;	sub    0x0(%rbp),%rax
+     	db 48h,2bh,55h,00h         ;	sub    0x0(%rbp),%rdx
+     	db 48h,29h,0c2h            ;	sub    %rax,%rdx
+     	db 48h,19h,0c0h            ;	sbb    %rax,%rax
+     	db 48h,8dh,6dh,10h         ;	lea    0x10(%rbp),%rbp
+     	ret   
+cfa_AHEADER 0,"OR",OR
+     	db 48h,0bh,45h,00          ;	or     0x0(%rbp),%rax
+     	db 48h,8dh,6dh,08          ;	lea    0x8(%rbp),%rbp
+     	ret   
+cfa_AHEADER 0,"XOR",XOR
+	xor	rax,[rbp]
+     	db 48h,8dh,6dh,08          ;	lea    0x8(%rbp),%rbp
+     	ret   
+cfa_AHEADER 0,"AND",AND
+     	db 48h,23h,45h,00          ;	and    0x0(%rbp),%rax
+     	db 48h,8dh,6dh,08          ;	lea    0x8(%rbp),%rbp
+     	ret   
+cfa_AHEADER 0,"-",minus
+     	db 48h,0f7h,0d8h             ;	neg    %rax
+     	db 48h,03h,45h,00          ;	add    0x0(%rbp),%rax
+     	db 48h,8dh,6dh,08          ;	lea    0x8(%rbp),%rbp
+     	ret   
+cfa_AHEADER 0,"+",plus
+     	db 48h,03h,45h,00          ;	add    0x0(%rbp),%rax
+     	db 48h,8dh,6dh,08          ;	lea    0x8(%rbp),%rbp
+     	ret   
+cfa_AHEADER 0,"DNEGATE",DNEGATE
+     	db 48h,8bh,55h,00          ;	mov    0x0(%rbp),%rdx
+     	db 48h,0f7h,0d8h            ;	neg    %rax
+     	db 48h,0f7h,0dah            ;	neg    %rdx
+     	db 48h,83h,0d8h,00          ;	sbb    $0x0,%rax
+     	db 48h,89h,55h,00          ;	mov    %rdx,0x0(%rbp)
+     	ret   
+cfa_AHEADER 0,"D+",Dplus
+     	db 48h,8bh,55h,00          ;	mov    0x0(%rbp),%rdx
+     	db 48h,01h,55h,10h         ;	add    %rdx,0x10(%rbp)
+     	db 48h,13h,45h,08          ;	adc    0x8(%rbp),%rax
+     	db 48h,8dh,6dh,10h         ;	lea    0x10(%rbp),%rbp
+     	ret 
+cfa_AHEADER 0,"R@",R_ld
+     	LEA RBP, [RBP-8]         ;	lea    -0x8(%rbp),%rbp
+     	MOV [RBP], RAX          ;	mov    %rax,0x0(%rbp)
+     	db 48h,8bh,44h,24h,08       ;	mov    0x8(%rsp),%rax
+     	ret   
+cfa_AHEADER 0,"R>",Rgreat
+     	db 48h,8bh,1ch,24h         ;	mov    (%rsp),%rbx
+     	LEA RBP, [RBP-8]         ;	lea    -0x8(%rbp),%rbp
+     	MOV [RBP], RAX          ;	mov    %rax,0x0(%rbp)
+     	db 48h,8bh,44h,24h,08h      ;	mov    0x8(%rsp),%rax
+     	db 48h,8dh,64h,24h,10h      ;	lea    0x10(%rsp),%rsp
+     	db 0ffh,0e3h               ;	jmpq   *%rbx
+cfa_AHEADER 0,">R",greatR
+     	db 5bh                  ;	pop    %rbx
+     	db 50h                  ;	push   %rax
+     	MOV RAX, [RBP]          ;	mov    0x0(%rbp),%rax
+     	db 48h,8dh,6dh,08          ;	lea    0x8(%rbp),%rbp
+     	db 0ffh,0e3h               ;	jmpq   *%rbx
+
+cfa_AHEADER 0,"DUP>R",DUPgreatR
+     	db 5bh                  ;	pop    %rbx
+     	db 50h                  ;	push   %rax
+     	db 0ffh,0e3h               ;	jmpq   *%rbx
+
+cfa_AHEADER 0,"2R>",_2Rgreat
+     	db 48h,8bh,1ch,24h         ;	mov    (%rsp),%rbx
+     	db 48h,89h,45h,0f8h         ;	mov    %rax,-0x8(%rbp)
+     	db 48h,8bh,4ch,24h,10h      ;	mov    0x10(%rsp),%rcx
+     	db 48h,8bh,44h,24h,08       ;	mov    0x8(%rsp),%rax
+     	db 48h,89h,4dh,0f0h         ;	mov    %rcx,-0x10(%rbp)
+     	db 48h,8dh,6dh,0f0h         ;	lea    -0x10(%rbp),%rbp
+     	db 48h,8dh,64h,24h,18h      ;	lea    0x18(%rsp),%rsp
+     	db 0ffh,0e3h               ;	jmpq   *%rbx
+cfa_AHEADER 0,"2>R",_2greatR
+     	db 5bh                  ;	pop    %rbx
+     	db 0ffh,75h,00             ;	pushq  0x0(%rbp)
+     	db 50h                  ;	push   %rax
+     	db 48h,8dh,6dh,10h         ;	lea    0x10(%rbp),%rbp
+     	db 48h,8bh,45h,0f8h         ;	mov    -0x8(%rbp),%rax
+     	db 0ffh,0e3h               ;	jmpq   *%rbx
+cfa_AHEADER 0,"2R@",_2R_ld
+     	db 48h,89h,45h,0f8h         ;	mov    %rax,-0x8(%rbp)
+     	db 48h,8bh,44h,24h,08       ;	mov    0x8(%rsp),%rax
+     	db 48h,8bh,5ch,24h,10h      ;	mov    0x10(%rsp),%rbx
+     	db 48h,89h,5dh,0f0h         ;	mov    %rbx,-0x10(%rbp)
+     	db 48h,8dh,6dh,0f0h         ;	lea    -0x10(%rbp),%rbp
+     	ret   
+cfa_AHEADER 0,"SP@",SP_ld
+     	LEA RBP, [RBP-8]         ;	lea    -0x8(%rbp),%rbp
+     	MOV [RBP], RAX          ;	mov    %rax,0x0(%rbp)
+     	db 48h,89h,0e8h            ;	mov    %rbp,%rax
+     	ret   
+cfa_AHEADER 0,"SP!",SPsave
+     	db 48h,8dh,68h,08          ;	lea    0x8(%rax),%rbp
+     	db 48h,8bh,45h,0f8h         ;	mov    -0x8(%rbp),%rax
+     	ret   
+cfa_AHEADER 0,"RP@",RP_ld
+     	LEA RBP, [RBP-8]         ;	lea    -0x8(%rbp),%rbp
+     	MOV [RBP], RAX          ;	mov    %rax,0x0(%rbp)
+     	db 48h,8dh,44h,24h,08       ;	lea    0x8(%rsp),%rax
+     	ret   
+cfa_AHEADER 0,"RP!",RPsave
+     	db 5bh                  ;	pop    %rbx
+     	db 48h,89h,0c4h             ;	mov    %rax,%rsp
+     	db 48h,8bh, 45h, 00          ;	mov    0x0(%rbp),%rax
+     	db 48h,8dh, 6dh, 08          ;	lea    0x8(%rbp),%rbp
+     	db 0ffh,0e3h               ;	jmpq   *%rbx
+
+
+cfa_AHEADER 0,"TlsIndex!",TlsIndexSet
+     	db 49h,89h,0c6h            ;	mov    %rax,%r14
+	jmp  cfa_DROP
+
+cfa_AHEADER 0,"TlsIndex@",TlsIndexGet
+      	LEA RBP, [RBP-8]          ;	lea    -0x8(%rbp),%rbp
+      	MOV [RBP], RAX          ;	mov    %rax,0x0(%rbp)
+	mov	rax,r14
+     	ret   
+
+cfa_AHEADER 0,"CDR",CDR
+     	db 09h,0c0h              ; b60:	or     %eax,%eax
+	je     @f
+     	MOV    EAX,[EAX-8]
+;     	db 8bh,40h,0fch          ;  b64:	mov    -0x4(%rax),%eax
+@@:    	ret
+
+cfa_AHEADER 0,"NAME>",NAMEgreat
+     	MOV RAX,  [RAX-8*3]
+;     	db 8bh,40h,0f4h             ;	mov    -0xc(%rax),%eax
+     	ret
+cfa_AHEADER 0,"NAME>C",NAMEgreatC
+     	LEA    EAX,[EAX-8*3]
+     	ret
+cfa_AHEADER 0,"NAME>F",NAMEgreatF
+     	LEA    EAX,[EAX-8*2]
+;     	db 48h,8dh,40h,0f8h         ;	lea    -0x8(%rax),%rax
+     	ret   
+cfa_AHEADER 0,"FILL",FILL
+     	db 48h,8bh,4dh,00     ;     ba7:	mov    0x0(%rbp),%rcx
+     	db 48h,8bh,7dh,08     ;     bab:	mov    0x8(%rbp),%rdi
+     	db 0fch                ;  baf:	cld    
+     	db 48h,89h,0cbh        ;    bb0:	mov    %rcx,%rbx
+     	db 48h,83h,0e3h,03     ;     bb3:	and    $0x3,%rbx
+
+;     	db 75h,29h            ;   bb7:	jne    be2 <FILL49>
+;    	db 48h,89h,0c3h        ;    bb9:	mov    %rax,%rbx
+;     	db 48h,0c1h,0e0h,08     ;     bbc:	shl    $0x8,%rax
+;    	db 48h,09h,0d8h        ;    bc0:	or     %rbx,%rax
+;    	db 48h,0c1h,0e0h,08     ;     bc3:	shl    $0x8,%rax
+;    	db 48h,09h,0d8h        ;    bc7:	or     %rbx,%rax
+;    	db 48h,0c1h,0e0h,08     ;     bca:	shl    $0x8,%rax
+;    	db 48h,09h,0d8h        ;    bce:	or     %rbx,%rax
+;    	db 48h,89h,0cbh        ;    bd1:	mov    %rcx,%rbx
+;    	db 48h,0c1h,0f9h,02     ;     bd4:	sar    $0x2,%rcx
+;    	db 0f3h,48h,0abh        ;    bd8:	rep stos %rax,%es:(%rdi)
+;    	db 48h,89h,0d9h        ;    bdb:	mov    %rbx,%rcx
+;    	db 48h,83h,0e1h,03h    ;     bde:	and    $0x3,%rcx
+
+     	db 0f3h,0aah            ;   be2:	rep stos %al,%es:(%rdi)
+     	db 48h,8dh,6dh,18h    ;     be4:	lea    0x18(%rbp),%rbp
+     	db 48h,8bh,45h,0f8h    ;     be8:	mov    -0x8(%rbp),%rax
+	ret   
+cfa_AHEADER 0,"CMOVE>",CMOVEgreat
+     	db 48h,89h,0c1h         ;   c00:	mov    %rax,%rcx
+     	db 48h,8bh,7dh,00h     ;    c03:	mov    0x0(%rbp),%rdi
+     	db 48h,8bh,75h,08h     ;    c07:	mov    0x8(%rbp),%rsi
+     	db 0fdh                 ; c0b:	std    
+     	db 48h,01h,0cfh         ;   c0c:	add    %rcx,%rdi
+     	db 48h,01h,0ceh         ;   c0f:	add    %rcx,%rsi
+     	db 48h,0ffh,0ceh         ;   c12:	dec    %rsi
+     	db 48h,0ffh,0cfh         ;   c15:	dec    %rdi
+     	db 0f3h,0a4h             ;  c18:	rep movsb %ds:(%rsi),%es:(%rdi)
+     	db 0fch                 ; c1a:	cld    
+     	db 48h,8dh,6dh,18h     ;    c1b:	lea    0x18(%rbp),%rbp
+     	db 48h,8bh,45h,0f8h     ;    c1f:	mov    -0x8(%rbp),%rax
+	ret   
+cfa_AHEADER 0,"CMOVE",CMOVE 
+     	db 48h,89h,0c1h         ;  c36: 	mov    %rax,%rcx
+     	db 48h,8bh,7dh,00h     ;   c39: 	mov    0x0(%rbp),%rdi
+     	db 48h,8bh,75h,08h     ;   c3d: 	mov    0x8(%rbp),%rsi
+     	db 0fch                 ;c41: 	cld    
+     	db 0f3h,0a4h             ; c42: 	rep movsb %ds:(%rsi),%es:(%rdi)
+     	db 48h,8dh,6dh,18h     ;   c44: 	lea    0x18(%rbp),%rbp
+     	db 48h,8bh,45h,0f8h     ;   c48: 	mov    -0x8(%rbp),%rax
+	ret   
+cfa_AHEADER 0,"ASCIIZ>",ASCIIZgreat
+     	LEA RBP, [RBP-8]     ;    c61:	lea    -0x8(%rbp),%rbp
+     	db 48h,89h,0c2h         ;   c65:	mov    %rax,%rdx
+     	db 8ah,08h             ;  c68:	mov    (%rax),%cl
+     	db 48h,8dh,40h,01h     ;    c6a:	lea    0x1(%rax),%rax
+     	db 08h,0c9h             ;  c6e:	or     %cl,%cl
+     	db 75h,0f6h             ;  c70:	jne    c68 <ASCg>
+     	db 48h,8dh,40h,0ffh     ;    c72:	lea    -0x1(%rax),%rax
+     	db 48h,29h,0d0h         ;   c76:	sub    %rdx,%rax
+     	db 48h,89h,55h,00      ;    c79:	mov    %rdx,0x0(%rbp)
+     	ret   
+cfa_AHEADER 0,"EXECUTE",EXECUTE
+     	db 48h,89h,0c2h            ;	mov    %rax,%rdx
+     	MOV RAX, [RBP]          ;	mov    0x0(%rbp),%rax
+     	db 48h,8dh,6dh,08h         ;	lea    0x8(%rbp),%rbp
+     	db 0ffh,0e2h               ;	jmpq   *%rdx
+
+cfa_AHEADER 0,"PERFORM",PERFORM
+     	db 48h,8bh,00             ;	mov    (%rax),%rax
+	jmp cfa_EXECUTE
+
+;cfa_AHEADER 0,"HPOINT",HPOINT
+cfa_AHEADER 0,"NOOP",NOOP
+	ret
+cfa_AHEADER 0,"I",I
+     	LEA RBP, [RBP-8]         ;	lea    -0x8(%rbp),%rbp
+     	MOV [RBP], RAX         ;	mov    %rax,0x0(%rbp)
+     	db 48h,8bh,44h,24h,08h      ;	mov    0x8(%rsp),%rax
+     	db 48h,2bh,44h,24h,10h      ;	sub    0x10(%rsp),%rax
+	ret   
+cfa_AHEADER 0,"J",J
+     	LEA RBP, [RBP-8]         ;	lea    -0x8(%rbp),%rbp
+     	MOV [RBP], RAX         ;	mov    %rax,0x0(%rbp)
+      MOV RAX, [RSP+8*4]
+      SUB RAX, [RSP+8*5]
+	ret   
+
+cfa_AHEADER 0,"ADDxESPycomTOS",ADD_xESP_ycomTOS
+;     	db 01h,44h,24h,08h         ;	add    %eax,0x8(%rsp)
+	ADD  [RSP+8],EAX
+     	MOV RAX, [RBP]         ;	mov    0x0(%rbp),%rax
+     	db 48h,8dh,6dh,08h         ;	lea    0x8(%rbp),%rbp
+     	ret
+
+cfa_AHEADER 0,"QQTT",QQTT
+;	inc qword [rsp]
+	LEA	EDX,[RAX+RDX]
+	ret   
+
+cfa_AHEADER 0,"XDO",XDO
+     	db 0bah,00h,00h,00h,80h      ;	mov    $0x80000000,%edx
+;	MOV RDX,8000000000000000H
+	SUB	RDX,[RBP]
+	LEA	RBX,[RAX+RDX]
+	MOV	RAX,[RBP+8]
+;     	db 89h,0d2h               ;	mov    %edx,%edx
+     	db 48h,8dh,6dh,10h         ;	lea    0x10(%rbp),%rbp
+     	ret   
+cfa_AHEADER 0,"QBRANCH",QBRANCH
+     	or	rax,rax
+     	MOV RAX, [RBP]         ;	mov    0x0(%rbp),%rax
+     	db 48h,8dh,6dh,08h         ;	lea    0x8(%rbp),%rbp
+     	ret   
+cfa_AHEADER 0,"XLIT",XLIT
+     	LEA RBP, [RBP-8]         ;	lea    -0x8(%rbp),%rbp
+     	MOV [RBP], RAX         ;	mov    %rax,0x0(%rbp)
+     	db 5ah                  ;	pop    %rdx
+     	db 8bh,02h               ;	mov    (%rdx),%eax
+     	db 48h,98h               ;	cltq   
+     	db 48h,83h,0c2h,04h         ;	add    $0x4,%rdx
+     	db 0ffh,0e2h               ;	jmpq   *%rdx
+
+cfa_AHEADER 0,"NNN",NNN
+	call cfa__USERminusCODE
+	DD (T_NNN-main_task) and 0FFFFFFFFH
+
+
+cfa_AHEADER 0,"_SLITERAL-CODE",_SLITERALminusCODE
+     	db 48h,8dh,6dh,0f0h         ;	lea    -0x10(%rbp),%rbp
+     	db 48h,89h,45h,08h         ;	mov    %rax,0x8(%rbp)
+     	db 5bh                  ;	pop    %rbx
+     	db 0fh,0b6h,03h            ;	movzbl (%rbx),%eax
+     	db 48h,0ffh,0c3h            ;	inc    %rbx
+     	db 48h,89h,5dh,00h         ;	mov    %rbx,0x0(%rbp)
+     	db 48h,01h,0c3h            ;	add    %rax,%rbx
+     	db 48h,0ffh,0c3h            ;	inc    %rbx
+     	db 0ffh,0e3h               ;	jmpq   *%rbx
+
+
+cfa_AHEADER 0,"_CONSTANT-CODE",_CONSTANTminusCODE         
+    	LEA RBP, [RBP-8]         ;	lea    -0x8(%rbp),%rbp
+    	MOV [RBP], RAX         ;	mov    %rax,0x0(%rbp)
+    	db 58h                  ;	pop    %rax
+    	db 8bh,00h               ;	mov    (%rax),%eax
+    	db 48h,98h               ;	cltq   
+	ret   
+
+cfa_AHEADER 0,"_CREATE-CODE",_CREATEminusCODE
+    	LEA RBP, [RBP-8]         ;	lea    -0x8(%rbp),%rbp
+    	MOV [RBP], RAX         ;	mov    %rax,0x0(%rbp)
+    	db 58h                  ;	pop    %rax
+	ret   
+
+cfa_AHEADER 0,"_TOVALUE-CODE",_TOVALUEminusCODE
+    	db 5bh                  ;	pop    %rbx
+    	db 8dh,5bh,0f7h            ;	lea    -0x9(%rbx),%ebx
+    	db 89h,03h               ;	mov    %eax,(%rbx)
+    	MOV RAX, [RBP]          ;	mov    0x0(%rbp),%rax
+    	db 48h,8dh,6dh,08h          ;	lea    0x8(%rbp),%rbp
+    	ret   
+
+cfa_AHEADER 0,"TOVALUE-CODE",TOVALUEminusCODE
+ call cfa__CONSTANTminusCODE 
+ DD cfa__TOVALUEminusCODE and 0FFFFFFFFH
+ call cfa__TOVALUEminusCODE
+
+cfa_AHEADER 0,"VECT-CODE",VECTminusCODE
+ call cfa__CONSTANTminusCODE 
+ DD cfa__VECTminusCODE and 0FFFFFFFFH
+ call cfa__TOVALUEminusCODE
+
+cfa_AHEADER 0,"QVECT-CODE",QVECTminusCODE
+ call cfa__QVALUEminusCODE
+ DD	0
+ call cfa__QTOVALUEminusCODE
+ DQ	cfa__QVECTminusCODE
+
+cfa_AHEADER 0,"_VECT-CODE",_VECTminusCODE
+    	db 5bh                  ;	pop    %rbx
+    	db 67h,8bh,1bh            ;	mov    (%ebx),%ebx
+    	db 0ffh,0e3h               ;	jmpq   *%rbx
+
+cfa_AHEADER 0,"_USER-VALUE-CODE", _USERminusVALUEminusCODE
+    	LEA RBP, [RBP-8]         ;	lea    -0x8(%rbp),%rbp
+    	MOV [RBP], RAX         ;	mov    %rax,0x0(%rbp)
+    	db 58h                 ;	pop    %rax
+    	db 8bh,00h               ;	mov    (%rax),%eax
+    	db 4ch,01h,0f0h            ;	add    %r14,%rax
+    	db 8bh,00h               ;	mov    (%rax),%eax
+    	ret   
+
+;cfa_AHEADER 0,"USER-VALUE-CODE",USERminusVALUEminusCODE
+; call cfa__CONSTANTminusCODE 
+; DD cfa__USERminusVALUEminusCODE
+; call cfa__TOVALUEminusCODE
+
+cfa_AHEADER 0,"_TOUSER-VALUE-CODE",_TOUSERminusVALUEminusCODE
+    	db 5bh                  ;	pop    %rbx
+    	db 83h,0ebh,09h             ;	sub    $0x9,%ebx
+    	db 8bh,1bh                ;	mov    (%rbx),%ebx
+    	db 44h,01h,0f3h             ;	add    %r14d,%ebx
+    	db 89h,03h                ;	mov    %eax,(%rbx)
+    	MOV RAX, [RBP]         ;	mov    0x0(%rbp),%rax
+    	db 48h,8dh,6dh,08h         ;	lea    0x8(%rbp),%rbp
+    	ret   
+    	
+;cfa_AHEADER 0,"TOUSER-VALUE-CODE",TOUSERminusVALUEminusCODE
+; call cfa__CONSTANTminusCODE 
+; DD cfa__TOUSERminusVALUEminusCODE
+; call cfa__TOVALUEminusCODE
+
+cfa_AHEADER 0,"_USER-CODE", _USERminusCODE
+    	LEA RBP, [RBP-8]          ;	lea    -0x8(%rbp),%rbp
+    	MOV [RBP], RAX          ;	mov    %rax,0x0(%rbp)
+    	MOV [RBP], RAX          ;	mov    %rax,0x0(%rbp)
+    	MOV [RBP], RAX          ;	mov    %rax,0x0(%rbp)
+    	db 58h                  ;	pop    %rax
+    	db 8bh,00h                ;	mov    (%rax),%eax
+    	db 4ch,01h,0f0h            ;	add    %r14,%rax
+	ret   
+
+cfa_AHEADER 0,"DOES>A",DOESgreatA
+ call cfa__USERminusCODE
+ DD (T_DOESgreatA-main_task) and 0ffffffffh
+
+cfa_AHEADER 0,"USER-CODE",USERminusCODE
+ call cfa__CONSTANTminusCODE 
+ DD cfa__USERminusCODE and 0FFFFFFFFH
+ call cfa__TOVALUEminusCODE
+
+cfa_AHEADER 0,"CREATE-CODE",CREATEminusCODE
+ call cfa__CONSTANTminusCODE 
+ DD cfa__CREATEminusCODE and 0FFFFFFFFH
+ call cfa__TOVALUEminusCODE
+
+cfa_AHEADER 0,"_QCONSTANT-CODE",_QCONSTANTminusCODE
+    	db 88h,0dbh               ;	mov    %bl,%bl
+    	LEA RBP, [RBP-8]         ;	lea    -0x8(%rbp),%rbp
+    	MOV [RBP], RAX         ;	mov    %rax,0x0(%rbp)
+    	db 58h                  ;	pop    %rax
+    	db 48h,8bh,00h            ;	mov    (%rax),%rax
+    	ret   
+cfa_AHEADER 0,"_QVALUE-CODE",_QVALUEminusCODE
+    	LEA RBP, [RBP-8]         ;	lea    -0x8(%rbp),%rbp
+    	MOV [RBP], RAX         ;	mov    %rax,0x0(%rbp)
+    	db 58h                  ;	pop    %rax
+    	db 48h,8bh,40h,09h         ;	mov    0x9(%rax),%rax
+    	ret   
+
+
+cfa_AHEADER 0,"_QVECT-CODE",_QVECTminusCODE
+    	db 5bh                  ;	pop    %rbx
+    	mov    rbx,[rbx+9]
+    	db 0ffh,0e3h               ;	jmpq   *%rbx
+
+cfa_AHEADER 0,"_QTOVALUE-CODE",_QTOVALUEminusCODE
+    	db 5bh                  ;	pop    %rbx
+	lea    rbx,[rbx]
+    	mov    [rbx],rax
+    	MOV RAX, [RBP]         ;	mov    0x0(%rbp),%rax
+    	db 48h,8dh,6dh,08h         ;	lea    0x8(%rbp),%rbp
+    	ret   
+
+
+cfa_AHEADER 0,"QVALUE-CODE",QVALUEminusCODE
+ call cfa__CONSTANTminusCODE 
+ DD cfa__QVALUEminusCODE  and 0FFFFFFFFH
+ call cfa__TOVALUEminusCODE
+
+cfa_AHEADER 0,"QTOVALUE-CODE",QTOVALUEminusCODE
+ call cfa__CONSTANTminusCODE 
+ DD cfa__QTOVALUEminusCODE  and 0FFFFFFFFH
+ call cfa__TOVALUEminusCODE
+
+cfa_AHEADER 0,"CONSTANT-CODE",CONSTANTminusCODE
+ call cfa__CONSTANTminusCODE 
+ DD cfa__CONSTANTminusCODE  and 0FFFFFFFFH
+ call cfa__TOVALUEminusCODE
+
+cfa_AHEADER 0,"_CLITERAL-CODE",_CLITERALminusCODE
+    	LEA RBP, [RBP-8]         ;	lea    -0x8(%rbp),%rbp
+    	MOV [RBP], RAX         ;	mov    %rax,0x0(%rbp)
+    	db 58h                  ;	pop    %rax
+    	db 0fh,0b6h,18h            ;	movzbl (%rax),%ebx
+    	db 8dh,5ch,03h,02h         ;	lea    0x2(%rbx,%rax,1),%ebx
+    	db 0ffh,0e3h              ;	jmpq   *%rbx
+
+cfa_AHEADER 0,"CLITERAL-CODE",CLITERALminusCODE
+ call cfa__CONSTANTminusCODE 
+ DD cfa__CLITERALminusCODE and 0FFFFFFFFH
+ call cfa__TOVALUEminusCODE 
+
+
+cfa_AHEADER 0,'BASE',BASE
+ call cfa__USERminusCODE
+ DD (T_BASE-main_task)  and 0FFFFFFFFH
+
+cfa_AHEADER 0,'PAD',PAD
+ call cfa__USERminusCODE
+ DD (T_PAD-main_task) and 0FFFFFFFFH
+
+cfa_AHEADER 0,'LAST',LAST
+ call cfa__CREATEminusCODE
+ DQ LastNFA
+ DQ ReadFile
+
+ cfa_AHEADER 0,'DP',DP
+ call cfa__CREATEminusCODE
+ DQ CTOP ; DP_BUFF
+
+cfa_AHEADER 0,'''DROP_V',ticDROP_V
+ call cfa__CONSTANTminusCODE+00H
+ DD cfa_DROP and 0FFFFFFFFH
+ call cfa__TOVALUEminusCODE+00H
+
+cfa_AHEADER 0,'''DUP_V',ticDUP_V
+
+ call cfa__CONSTANTminusCODE
+ DD cfa_DUP and 0FFFFFFFFH
+ call cfa__TOVALUEminusCODE+00H
+
+cfa_AHEADER 0,'CONTEXT',_CONTEXT
+ call cfa__USERminusVALUEminusCODE
+ DD (T_CONTEXT-main_task) and 0FFFFFFFFH 
+ call cfa__TOUSERminusVALUEminusCODE
+
+cfa_AHEADER 0,'>IN',greatIN
+ call cfa__USERminusCODE
+ DD (T_greatIN-main_task) and 0FFFFFFFFH
+
+cfa_AHEADER 0,'>OUT',greatOUT
+ call cfa__CREATEminusCODE 
+TO_OUT   dd 0
+
+cfa_AHEADER 0,'CURFILE',CURFILE
+ call cfa__USERminusCODE
+ DD (T_CURFILE-main_task) and 0FFFFFFFFH
+
+cfa_AHEADER 0,'S0',S0
+ call cfa__USERminusCODE
+ DD (T_S0-main_task) and 0FFFFFFFFH
+
+cfa_AHEADER 0,'R0',R0
+ call cfa__USERminusCODE
+ DD (T_R0-main_task) and 0FFFFFFFFH
+
+cfa_AHEADER 0,'SOURCE-ID',SOURCEminusID
+ call cfa__USERminusVALUEminusCODE
+ DD (T_SOURCEminusID-main_task) and 0FFFFFFFFH
+ call cfa__TOUSERminusVALUEminusCODE
+
+cfa_AHEADER 0,'TIB',TIB
+ call cfa__USERminusVALUEminusCODE
+ DD (T_TIB-main_task) and 0FFFFFFFFH
+ call cfa__TOUSERminusVALUEminusCODE
+
+cfa_AHEADER 0,'#TIB',nTIB
+ call cfa__USERminusCODE
+ DD (T_nTIB-main_task) and 0FFFFFFFFH
+
+cfa_AHEADER 0,'CURSTR',CURSTR
+ call cfa__USERminusCODE
+ DD (T_CURSTR-main_task) and 0FFFFFFFFH
+
+cfa_AHEADER 0,'SLITERAL-CODE',SLITERALminusCODE
+ call cfa__CONSTANTminusCODE 
+ DD cfa__SLITERALminusCODE and 0FFFFFFFFH
+ call cfa__TOVALUEminusCODE 
+
+cfa_AHEADER 0,'USER-OFFS',USERminusOFFS
+ call cfa__CREATEminusCODE 
+ DD reserve+MUSEROFFS
+
+cfa_AHEADER 0,'HANDLER',HANDLER
+ call cfa__USERminusCODE
+ DD (T_HANDLER-main_task) and 0FFFFFFFFH
+
+cfa_AHEADER 0,'STATE',STATE
+ call cfa__USERminusCODE
+ DD (T_STATE-main_task) and 0FFFFFFFFH
+
+cfa_AHEADER 0,'CURRENT',CURRENT
+ call cfa__USERminusCODE
+ DD (T_CURRENT-main_task) and 0FFFFFFFFH
+
+cfa_AHEADER 0,'W-CNT',WminusCNT
+ call cfa__USERminusCODE
+ DD (T_WminusCNT-main_task) and 0ffffffffh
+
+cfa_AHEADER 0,'S-O',SminusO
+ call cfa__USERminusCODE
+ DD (T_SminusO-main_task) and 0ffffffffh
+
+cfa_AHEADER 0,'ER-U',ERminusU
+ call cfa__USERminusCODE
+ DD (T_ERminusU-main_task) and 0ffffffffh
+
+cfa_AHEADER 0,'ER-A',ERminusA
+ call cfa__USERminusCODE
+ DD (T_ERminusA-main_task) and 0ffffffffh
+
+cfa_AHEADER 0,'FORTH-WORDLIST',FORTHminusWORDLIST
+ call cfa__QVALUEminusCODE
+ DD 0
+ call cfa__QTOVALUEminusCODE
+ Dq T_FORTH+8
+
+cfa_AHEADER 0,'KERNEL-WORDLIST',KERNELminusWORDLIST
+ call cfa__CONSTANTminusCODE 
+ DD 0 ; kernel_wid
+ call cfa__TOVALUEminusCODE 
+
+cfa_AHEADER 0,'VOC-LIST',VOCminusLIST
+ call cfa__CREATEminusCODE 
+ DQ T_FORTH
+
+cfa_AHEADER 0,'WARNING',WARNING
+ call cfa__USERminusCODE
+ DD (T_WARNING-main_task) and 0ffffffffh
+
+cfa_AHEADER 0,'ORG-ADDR',ORGminusADDR
+ call cfa__QVALUEminusCODE
+ DD 0
+ call cfa__QTOVALUEminusCODE
+ Dq cfa_img_org
+
+cfa_AHEADER 0,'DBG_CURFILE',DBG_CURFILE
+ call cfa__QVALUEminusCODE
+ DD 0
+ call cfa__QTOVALUEminusCODE
+ Dq 0
+
+cfa_AHEADER 0,'INCLUDED',INCLUDED
+ call cfa__QVECTminusCODE
+ DD 0
+ call cfa__QTOVALUEminusCODE
+ Dq cfa_INCLUDED_
+
+cfa_AHEADER 0,'WRITE-FILE',WRITEminusFILE ;  ( c-addr u fileid -- ior ) 
+	invoke	WriteFile,rax,qword [rbp+8],qword [rbp],bytes_count,0
+	lea	rbp,[rbp+16]
+     	sub    rax,1
+     	sbb    rax,rax ; 0=
+	ret
+
+cfa_AHEADER 0,'READ-FILE',READminusFILE ;  ( c-addr u1 fileid -- u2 ior )
+	MOV	qword [bytes_count],rbx
+	invoke	ReadFile,rax,qword [rbp+8],qword [rbp],bytes_count,0
+
+	lea	rbp,[rbp+8]
+	mov	ebx, dword [bytes_count]
+	AND	rbx,07fffffffh
+;	sub	rbx,2
+	mov	[rbp],rbx
+     	sub	rax,1
+     	sbb	rax,rax ; 0=
+	ret
+
+cfa_AHEADER 0,'ZOPEN-FILE',ZOPENminusFILE ; ( z-addr fam -- fileid ior )
+	invoke	CreateFile,qword [rbp],rax,0,0,OPEN_EXISTING,FILE_ATTRIBUTE_ARCHIVE,0
+	AND	rax,07fffffffh
+	mov	[rbp],rax
+
+     	xor    rax,07fffffffh
+     	sub    rax,1		
+	sbb    rax,rax
+	ret
+
+cfa_AHEADER 0,'ZOPEN-FILE-SHARED',ZOPENminusFILEminusSHARED ; ( z-addr fam -- fileid ior )
+	invoke	CreateFile,qword [rbp],rax,3,0,OPEN_EXISTING,FILE_ATTRIBUTE_ARCHIVE,0
+	AND	rax,07fffffffh
+	mov	[rbp],rax
+
+     	xor    rax,07fffffffh
+     	sub    rax,1		
+	sbb    rax,rax
+	ret
+@01:	dd	12, 0, 1
+
+cfa_AHEADER 0,'ZCREATE-FILE',ZCREATEminusFILE ;( z-addr fam -- fileid ior )
+	invoke	CreateFile,qword [rbp],rax,0,0,CREATE_ALWAYS,FILE_ATTRIBUTE_ARCHIVE,0
+	AND	rax,07fffffffh
+	mov	[rbp],rax
+
+     	xor    rax,07fffffffh
+     	sub    rax,1		
+	sbb    rax,rax
+	ret
+
+cfa_AHEADER 0,'ZCREATE-FILE-SHARED',ZCREATEminusFILEminusSHARED ;( z-addr fam -- fileid ior )
+	invoke	CreateFile,qword [rbp],rax,3,0,CREATE_ALWAYS,FILE_ATTRIBUTE_ARCHIVE,0
+	AND	rax,07fffffffh
+	mov	[rbp],rax
+
+     	xor    rax,07fffffffh
+     	sub    rax,1		
+	sbb    rax,rax
+	ret
+
+cfa_AHEADER 0,'CLOSE-FILE',CLOSEminusFILE ;( fileid -- ior )
+	invoke	CloseHandle,rax
+     	mov    rax,0
+	ret
+
+cfa_AHEADER 0,'OS_KEY',OS_KEY
+	LEA	RBP,[RBP-8]
+	MOV	[RBP],RAX	
+OS_KEY0:
+	mov rax, -1
+	mov [emit_buffer], rax
+	push rsi
+	invoke ReadConsoleInput, qword [cfa_HminusSTDIN+14], emit_buffer, 1, written_buffer, 0
+	pop rsi
+	cmp qword [emit_buffer],1
+	je OS_KEY0
+
+	movzx rax, byte [written_buffer+6]
+	test rax, rax
+	jz OS_KEY0
+	ret
+
+
+cfa_AHEADER 0,'SLEEP',SLEEP
+	invoke Sleep,rax
+	call	cfa_DROP	
+	ret
+
+cfa_AHEADER 0,'EKEY?',EKEYque
+      	LEA RBP, [RBP-8]          ;	lea    -0x8(%rbp),%rbp
+      	MOV [RBP], RAX          ;	mov    %rax,0x0(%rbp)
+	invoke GetNumberOfConsoleInputEvents,qword [cfa_HminusSTDIN+14], emit_buffer
+	mov	rax, [emit_buffer]
+	ret
+
+
+cfa_AHEADER 0,'ALLOCATE',ALLOCATE
+	invoke	VirtualAlloc,0,rax,MEM_COMMIT,PAGE_EXECUTE_READWRITE
+	call	cfa_DUP
+	mov	[rbp],rax
+
+     	sub    rax,1
+     	sbb    rax,rax
+
+	ret
+
+cfa_AHEADER 0,'FREE',FREE
+	invoke	VirtualFree,rax,0,MEM_RELEASE
+        mov     eax, 0
+	ret
+
+cfa_AHEADER 0,'FILE-POSITION',FILEminusPOSITION ;( fileid -- ud ior )
+     	lea	rbp,[rbp-0x10]
+	mov	qword [rbp+8],0
+	mov	qword [rbp],0
+	invoke	SetFilePointer,rax,0,qword [rbp],FILE_CURRENT
+	mov	qword [rbp+8],rax
+     	add	rax,1
+     	sub	rax,1
+     	sbb	rax,rax
+	ret
+	
+
+cfa_AHEADER 0,'REPOSITION-FILE',REPOSITIONminusFILE  ;( ud fileid -- ior )
+	invoke	SetFilePointer,rax,qword [rbp+8],qword [rbp],FILE_BEGIN
+     	lea	rbp,[rbp+0x10]
+     	add	rax,1
+     	sub	rax,1
+     	sbb	rax,rax
+	ret
+
+cfa_AHEADER 0,'COMMAND_LINE', COMMAND_LINE ;( -- zaddr )
+      	LEA RBP, [RBP-8]          ;	lea    -0x8(%rbp),%rbp
+      	MOV [RBP], RAX          ;	mov    %rax,0x0(%rbp)
+	invoke	GetCommandLine
+	ret
+
+cfa_AHEADER 0,'LOCALS_EXIT', LOCALS_EXIT ;( -- )
+; 
+	POP RBX
+	ADD RSP, RBX
+	ret
+
+;cfa_AHEADER 0,'ZTYPE',ZTYPE
+;	ret
+
+
+
+xcfa_API_12:
+	push	qword [rbp+8*11]
+xcfa_API_11:
+	push	qword [rbp+8*10]
+xcfa_API_10:
+	push	qword [rbp+8*9]
+xcfa_API_9:
+	push	qword [rbp+8*8]
+xcfa_API_8:
+	push	qword [rbp+8*7]
+xcfa_API_7:
+	push	qword [rbp+8*6]
+xcfa_API_6:
+	push	qword [rbp+8*5]
+xcfa_API_5:
+	push	qword [rbp+8*4]
+xcfa_API_4:
+	mov	r9,[rbp+8*3]
+xcfa_API_3:
+	mov	r8,[rbp+8*2]
+xcfa_API_2:
+	mov	rdx,[rbp+8]
+xcfa_API_1:
+	mov	rcx,[rbp]
+xcfa_API_0:
+	sub	rsp,$20
+	jmp	rbx
+
+
+cfa_AHEADER 0,'XAPI_12',XAPI_12
+	lea	rbx,[@f]
+	jmp	xcfa_API_12
+@@:	CALL	rax
+	add	rsp,$60 
+	retn
+
+cfa_AHEADER 0,'XAPI_9',XAPI_9
+	lea	rbx,[@f]
+	jmp	xcfa_API_9
+@@:	CALL	rax
+	add	rsp,$48
+	retn
+
+cfa_AHEADER 0,'XAPI_6',XAPI_6
+	lea	rbx,[@f]
+	jmp	xcfa_API_6
+@@:	CALL	rax
+	add	rsp,$30 
+	retn
+
+cfa_AHEADER 0,'XAPI_5',XAPI_5
+	lea	rbx,[@f]
+	jmp	xcfa_API_5
+@@:	CALL	rax
+	add	rsp,$28 
+	retn
+
+cfa_AHEADER 0,'XAPI_4',XAPI_4
+	lea	rbx,[@f]
+	jmp	xcfa_API_4
+@@:	CALL	rax
+	add	rsp,$20 
+	retn
+
+cfa_AHEADER 0,'XAPI_3',XAPI_3
+	lea	rbx,[@f]
+	jmp	xcfa_API_4
+@@:	CALL	rax
+	add	rsp,$20 
+	retn
+
+cfa_AHEADER 0,'XAPI_2',XAPI_2
+	lea	rbx,[@f]
+	jmp	xcfa_API_2
+@@:	CALL	rax
+	add	rsp,$20 
+	retn
+
+cfa_AHEADER 0,'XAPI_1',XAPI_1
+	sub	rsp,$20
+	mov	rcx,[rbp]
+	CALL	rax
+	add	rsp,$20 
+	retn
+
+cfa_AHEADER 0,'XAPI_0',XAPI_0
+	sub	rsp,$20
+	CALL	rax
+	add	rsp,$20 
+	retn
+
+ycfa_API_12:
+	push	qword [rbp]
+	lea	rbp,[rbp+8]
+ycfa_API_11:
+	push	qword [rbp]
+	lea	rbp,[rbp+8]
+ycfa_API_10:
+	push	qword [rbp]
+	lea	rbp,[rbp+8]
+ycfa_API_9:
+	push	qword [rbp]
+	lea	rbp,[rbp+8]
+ycfa_API_8:
+	push	qword [rbp]
+	lea	rbp,[rbp+8]
+ycfa_API_7:
+	push	qword [rbp]
+	lea	rbp,[rbp+8]
+ycfa_API_6:
+	push	qword [rbp]
+	lea	rbp,[rbp+8]
+ycfa_API_5:
+	push	qword [rbp]
+	lea	rbp,[rbp+8]
+ycfa_API_4:
+	mov	r9,[rbp]
+	lea	rbp,[rbp+8]
+ycfa_API_3:
+	mov	r8,[rbp]
+	lea	rbp,[rbp+8]
+ycfa_API_2:
+	mov	rdx,[rbp]
+	lea	rbp,[rbp+8]
+ycfa_API_1:
+	mov	rcx,[rbp]
+	lea	rbp,[rbp+8]
+ycfa_API_0:
+	sub	rsp,$20
+	jmp	rbx
+
+
+cfa_AHEADER 0,'YAPI_12',YAPI_12
+	lea	rbx,[@f]
+	jmp	ycfa_API_12
+@@:	CALL	rax
+	add	rsp,$60 
+	retn
+
+
+cfa_AHEADER 0,'YAPI_6',YAPI_6
+	lea	rbx,[@f]
+	jmp	ycfa_API_6
+@@:	CALL	rax
+	add	rsp,$30 
+	retn
+
+cfa_AHEADER 0,'YAPI_5',YAPI_5
+	lea	rbx,[@f]
+	jmp	ycfa_API_5
+@@:	CALL	rax
+	add	rsp,$28 
+	retn
+
+cfa_AHEADER 0,'YAPI_4',YAPI_4
+	lea	rbx,[@f]
+	jmp	ycfa_API_4
+@@:	CALL	rax
+	add	rsp,$20 
+	retn
+
+cfa_AHEADER 0,'YAPI_3',YAPI_3
+	lea	rbx,[@f]
+	jmp	ycfa_API_4
+@@:	CALL	rax
+	add	rsp,$20 
+	retn
+
+cfa_AHEADER 0,'YAPI_2',YAPI_2
+	lea	rbx,[@f]
+	jmp	ycfa_API_2
+@@:	CALL	rax
+	add	rsp,$20 
+	retn
+
+cfa_AHEADER 0,'YAPI_1',YAPI_1
+	mov	rcx,[rbp]
+	lea	rbp,[rbp+8]
+	sub	rsp,$20
+	CALL	rax
+	add	rsp,$20 
+	retn
+
+
+cfa_AHEADER 0,'YAPI_0',YAPI_0
+	sub	rsp,$20
+	CALL	rax
+	add	rsp,$20 
+	retn
+
+
+cfa_AHEADER 0,'WAPI_12',WAPI_12
+	mov	rcx ,rsp
+	and	rcx ,$f
+	JZ	cfa_YAPI_12
+@@:	CALL	cfa_YAPI_12
+	RET
+
+cfa_AHEADER 0,'WAPI_6',WAPI_6
+	mov	rcx ,rsp
+	and	rcx ,$f
+	JZ	cfa_YAPI_6
+@@:	CALL	cfa_YAPI_6
+	RET
+
+
+cfa_AHEADER 0,'WAPI_5',WAPI_5
+	mov	rcx ,rsp
+	and	rcx ,$f
+	JZ	cfa_YAPI_5
+@@:	CALL	cfa_YAPI_5
+	RET
+
+cfa_AHEADER 0,'WAPI_4',WAPI_4
+	mov	rcx ,rsp
+	and	rcx ,$f
+	JZ	cfa_YAPI_4
+@@:	CALL	cfa_YAPI_4
+	RET
+
+cfa_AHEADER 0,'WAPI_3',WAPI_3
+	mov	rcx ,rsp
+	and	rcx ,$f
+	JZ	cfa_YAPI_3
+@@:	CALL	cfa_YAPI_3
+	RET
+
+cfa_AHEADER 0,'WAPI_2',WAPI_2
+	mov	rcx ,rsp
+	and	rcx ,$f
+	JZ	cfa_YAPI_2
+@@:	CALL	cfa_YAPI_2
+	RET
+
+cfa_AHEADER 0,'WAPI_1',WAPI_1
+	mov	rcx ,rsp
+	and	rcx ,$f
+	JZ	cfa_YAPI_1
+@@:	CALL	cfa_YAPI_1
+	RET
+
+cfa_AHEADER 0,'WAPI_0',WAPI_0
+	mov	rcx ,rsp
+	and	rcx ,$f
+	JZ	cfa_YAPI_0
+@@:	CALL	cfa_YAPI_0
+	RET
+
+
+cfa_AHEADER 0,'DLL_L',DLL_L
+	mov	rbx, rsp
+	and     rbx, 0fh
+	jz	@f
+	lea	rsp,[rsp-8]
+	invoke	LoadLibrary,RAX
+	lea	rsp,[rsp+8]
+	retn
+@@:	invoke	LoadLibrary,RAX
+	retn
+
+cfa_AHEADER 0,'DLL_F',DLL_F
+	invoke	GetProcAddress,rax,qword [rbp]
+	lea	rbp,[rbp+8]
+	retn
+
+cfa_AHEADER 0,'DLL_S',DLL_S
+	invoke	GetProcAddress,qword [rbp],rax
+	lea	rbp,[rbp+8]
+	retn
+
+cfa_AHEADER 0,'BEEP44',BEEP44
+	push	rax
+	invoke	Beep,79666,644
+	pop	rax
+	retn
+
+cfa_AHEADER 0,'TASKININ',TASKININ
+	mov	rax , r14
+	lea	rbp,[rsp-10000h]
+	lea	r14,[rsp-18000h]
+	retn
+
+cfa_AHEADER 0,'FPI',FPI
+	FLDPI
+	retn
+
+cfa_AHEADER 0,'FLG2',FLG2
+	FLDLG2
+	retn
+
+cfa_AHEADER 0,'FLN2',FLN2
+	FLDLN2
+	retn
+
+cfa_AHEADER 0,'FL2T',FL2T
+	FLDL2T
+	retn
+
+cfa_AHEADER 0,'FL2E',FL2E
+	FLDL2E
+	retn
+
+cfa_AHEADER 0,'.E',dotE
+	FLDZ
+	retn
+
+cfa_AHEADER 0,'1.E',_1dotE
+	FLD1
+	retn
+
+cfa_AHEADER 0,'F0=',F0_equ
+       LEA EBP,  [EBP-8]
+       MOV [EBP], RAX
+       XOR RBX, RBX
+       FTST
+       FFREE ST
+       FINCSTP
+       FSTSW AX
+       SAHF
+       JNZ  @F
+       MOV RBX,  -1
+@@:   MOV RAX, RBX
+       RET
+
+cfa_AHEADER 0,'F0<',F0less
+       LEA EBP,  [EBP-8]
+       MOV [EBP], RAX
+       XOR RBX, RBX
+       FTST
+       FFREE ST
+       FINCSTP
+       FSTSW AX
+       SAHF
+       JNB  @F
+       MOV RBX,  -1
+@@:   MOV RAX, RBX
+       RET
+
+cfa_AHEADER 0,'F<',Fless
+       LEA EBP,  [EBP-8]
+       MOV [EBP], RAX
+       XOR RBX, RBX
+       FCOMPP
+       FINCSTP
+       FSTSW AX
+       SAHF
+       JBE  @F
+       MOV RBX,  -1
+@@:   MOV RAX, RBX
+       RET
+
+cfa_AHEADER 0,'F=',F_equ
+       LEA EBP,  [EBP-8]
+       MOV [EBP], RAX
+       XOR RBX, RBX
+       FCOMPP
+       FSTSW AX
+       SAHF
+       JNE  @F
+       MOV RBX,  -1
+@@:   MOV RAX, RBX
+       RET
+
+cfa_AHEADER 0,'FMAX',FMAX
+       MOV RBX, RAX
+       FCOM
+       FSTSW AX
+       SAHF
+       JB  @F
+	FXCH
+@@:	FFREE  ST
+       FINCSTP
+	MOV RAX, RBX
+       RET
+
+cfa_AHEADER 0,'FMIN',FMIN
+       MOV RBX, RAX
+       FCOM
+       FSTSW AX
+       SAHF
+       JA  @F
+	FXCH
+@@:	FFREE  ST
+       FINCSTP
+	MOV RAX, RBX
+       RET
+
+cfa_AHEADER 0,'FNEGATE',FNEGATE
+       FCHS
+       RET
+
+cfa_AHEADER 0,'FCOS',FCOS
+       FCOS
+       RET
+
+cfa_AHEADER 0,'FSIN',FSIN
+       FSIN
+       RET
+
+cfa_AHEADER 0,'FSINCOS',FSINCOS
+       FSINCOS
+       RET
+
+cfa_AHEADER 0,'FABS',FABS
+       FABS
+       RET
+
+cfa_AHEADER 0,'F+',Fplus
+       FADDP ST1, ST
+	retn
+
+cfa_AHEADER 0,'F1+',F1plus
+	FLD1
+       FADDP ST1, ST
+	retn
+
+cfa_AHEADER 0,'F-',Fminus
+       FSUBP ST1, ST
+	retn
+
+cfa_AHEADER 0,'F*',F_mul
+       FMULP ST1, ST0
+       RET
+
+cfa_AHEADER 0,'F/',F_div
+       FDIVP ST1, ST
+	retn
+
+cfa_AHEADER 0,'FSQRT',FSQRT
+       FSQRT
+	retn
+
+cfa_AHEADER 0,'FDROP',FDROP
+       FSTP ST0
+	retn
+
+cfa_AHEADER 0,'FDUP',FDUP
+       FLD ST0
+	retn
+
+cfa_AHEADER 0,'FOVER',FOVER
+       FLD ST1
+	retn
+
+cfa_AHEADER 0,'FINT',FINT
+       FRNDINT
+	retn
+
+cfa_AHEADER 0,'FSWAP',FSWAP
+       FXCH
+	retn
+
+cfa_AHEADER 0,'FROT',FROT
+       FXCH  ST2
+       FXCH  ST1
+       FXCH  ST2
+       FXCH  ST1
+	retn
+
+cfa_AHEADER 0,'FDEPTH',FDEPTH
+       LEA EBP,  [EBP-8]
+       MOV [EBP], RAX
+       FSTSW AX
+       SHR  RAX,  0BH
+       AND  RAX,  07H
+       JZ  @F
+       NEG  RAX
+       LEA RAX,  [RAX+8]
+@@:       RET
+
+
+cfa_AHEADER 0,'S>F',SgreatF
+
+      	MOV [RBP-8], RAX
+      	
+        FILD QWORD [RBP-8]
+
+     	MOV RAX, [RBP]         ;	mov    0x0(%rbp),%rax
+     	db 48h,8dh,6dh,08         ; 	lea    0x8(%rbp),%rbp
+
+	retn
+
+cfa_AHEADER 0,'F>S',FgreatS
+
+      	LEA RBP, [RBP-8]
+      	MOV [RBP], RAX
+
+        FISTP QWORD [RBP-8]
+
+     	MOV RAX, [RBP-8]
+
+	retn
+
+
+cfa_AHEADER 0,'FLOAT>DATA',FLOATgreatDATA
+
+      	LEA RBP, [RBP-8]
+        FSTP QWORD [RBP]
+     	XCHG RAX, [RBP]
+
+	retn
+
+cfa_AHEADER 0,'DATA>FLOAT',DATAgreatFLOAT
+
+     	XCHG RAX, [RBP]
+        FLD QWORD [RBP]
+      	LEA RBP, [RBP+8]
+
+	retn
+
+cfa_AHEADER 0,'SFLOAT>DATA',SFLOATgreatDATA
+
+      	LEA RBP, [RBP-8]
+        FSTP DWORD [RBP]
+     	XCHG RAX, [RBP]
+
+	retn
+
+cfa_AHEADER 0,'DATA>SFLOAT',DATAgreatSFLOAT
+
+     	XCHG RAX, [RBP]
+        FLD DWORD [RBP]
+      	LEA RBP, [RBP+8]
+
+	retn
+
+cfa_AHEADER 0,'F--S',FmimiS
+
+      	LEA RBP, [RBP-8]          ;	lea    -0x8(%rbp),%rbp
+      	MOV [RBP], RAX          ;	mov    %rax,0x0(%rbp)
+
+        FIST DWORD [RBP-8]
+
+
+     	MOV RAX, [RBP-8]         ;	mov    0x0(%rbp),%rax
+
+	retn
+
+cfa_AHEADER 0,'FINIT',FINIT
+	FNINIT
+	retn
+
+cfa_AHEADER 0,'GETFPUSW',GETFPUSW
+
+     	LEA RBP, [RBP-8]         ;	mov    0x0(%rbp),%rax
+      	MOV [RBP], RAX          ;	mov    %rax,0x0(%rbp)
+        FSTSW AX
+
+	retn
+
+cfa_AHEADER 0,'SETFPUCW',SETFPUCW ;  ( u -- )
+
+      	MOV [RBP-8], RAX          ;	mov    %rax,0x0(%rbp)
+        FLDCW [EBP-8]
+     	MOV RAX, [RBP]         ;	mov    0x0(%rbp),%rax
+      	LEA RBP, [RBP+8]          ;	lea    -0x8(%rbp),%rbp
+
+	retn
+
+cfa_AHEADER 0,'GETFPUCW',GETFPUCW
+
+      	LEA RBP, [RBP-8]
+        FSTCW  [RBP]
+     	XCHG RAX, [RBP]
+	retn
+
+cfa_AHEADER 0,'FLOG2',FLOG2
+       FLD1
+       FXCH
+       FYL2X
+	retn
+
+cfa_AHEADER 0,'F[LOG]',FxLOGy
+       FLDLG2
+       FXCH
+       FYL2X
+       FRNDINT
+	retn
+
+cfa_AHEADER 0,'TRUNC-MODE',TRUNCmiMODE
+
+        FSTCW [EBP-8]
+
+       BTS   DWORD [EBP-8],  0Ah
+       BTS   DWORD [EBP-8],  0Bh
+
+        FLDCW [EBP-8]
+
+	retn
+
+cfa_AHEADER 0,'ROUND-MODE',ROUNDmiMODE
+
+        FSTCW [EBP-8]
+
+       BTR   DWORD [EBP-8],  0Ah
+       BTR   DWORD [EBP-8],  0Bh
+
+        FLDCW [EBP-8]
+
+	retn
+
+cfa_AHEADER 0,'UP-MODE',UPmiMODE
+
+        FSTCW [EBP-8]
+
+       BTR   DWORD [EBP-8],  0Ah
+       BTS   DWORD [EBP-8],  0Bh
+
+        FLDCW [EBP-8]
+
+	retn
+
+cfa_AHEADER 0,'LOW-MODE',LOWmiMODE
+
+        FSTCW [EBP-8]
+
+       BTS   DWORD [EBP-8],  0Ah
+       BTR   DWORD [EBP-8],  0Bh
+
+        FLDCW [EBP-8]
+
+	retn
+
+cfa_AHEADER 0,'F10*',F10mul
+	FIMUL DWORD [@f]
+	retn
+@@:	Dq	10
+
+cfa_AHEADER 0,'F10/',F10div
+	FIDIV DWORD [@f]
+	retn
+@@:	Dq	10
+
+cfa_AHEADER 0,'F!',Fsave
+	FSTP  QWORD [EAX]
+     	MOV RAX, [RBP]         ;	mov    0x0(%rbp),%rax
+     	db 48h,8dh,6dh,08         ; 	lea    0x8(%rbp),%rbp
+	retn
+
+cfa_AHEADER 0,'F@',F_ld
+	FLD  QWORD [EAX]
+     	MOV RAX, [RBP]         ;	mov    0x0(%rbp),%rax
+     	db 48h,8dh,6dh,08         ; 	lea    0x8(%rbp),%rbp
+	retn
+
+cfa_AHEADER 0,'FLN',FLN
+       FLDLN2
+       FXCH
+       FYL2X
+	retn
+
+cfa_AHEADER 0,'FLNP1',FLNP1
+       FLD1
+       FADDP ST1, ST
+       FLDLN2
+       FXCH
+       FYL2X
+	retn
+
+cfa_AHEADER 0,'FLOG',FLOG ; ( F: r1 -- r2 )
+       FLDLG2
+       FXCH
+       FYL2X
+	retn
+
+cfa_AHEADER 0,'F>ENV',FgreatENV
+
+        FSTENV [RAX]
+
+     	MOV RAX, [RBP]         ;	mov    0x0(%rbp),%rax
+     	db 48h,8dh,6dh,08         ; 	lea    0x8(%rbp),%rbp
+
+	retn
+
+cfa_AHEADER 0,'FENV>',FENVgreat
+
+        FLDENV [RAX]
+
+     	MOV RAX, [RBP]         ;	mov    0x0(%rbp),%rax
+     	db 48h,8dh,6dh,08         ; 	lea    0x8(%rbp),%rbp
+
+	retn
+
+
+cfa_AHEADER 0,'FD<',FDless
+
+       XOR RBX, RBX
+       MOV  [RBP-8], RAX
+       FICOM DWORD [RBP-8]
+       FSTSW  AX
+       SAHF
+       JNB  @f
+       MOV  RBX,  -1
+@@:   MOV RAX, RBX
+
+	retn
+
+
+
+cfa_AHEADER 0,'TSTART',TSTART
+	invoke	CreateThread,NULL,20000h,rax,0,0,0
+	retn
+
+cfa_AHEADER 0,'PARAM',PARAM
+      	LEA	RBP, [RBP-32]
+      	MOV	[RBP+24], rax
+	mov     [RBP+16], rcx
+	mov     [RBP+8], rdx
+	mov     [RBP],  r8
+	mov     rax, r9 
+     ret
+
+
+cfa_AHEADER 0,'MARAP',MARAP
+	mov     r9 , rax
+	mov     r8 , [RBP]
+	mov     rdx , [RBP+8]
+	mov     rcx , [RBP+16]
+      	MOV	rax , [RBP+24]
+      	LEA	RBP, [RBP+32]
+     ret
+
+cfa_AHEADER 0,"'(ABORT'')",tic_cABORTdticcend
+ call cfa__CONSTANTminusCODE 
+ DD   cfa__cABORTdticcend and 0ffffffffh
+ call cfa__TOVALUEminusCODE
+cfa_AHEADER 0,"'TYPE",ticTYPE
+ call cfa__CONSTANTminusCODE 
+ DD   cfa_TYPE and 0ffffffffh
+ call cfa__TOVALUEminusCODE
+
+
+main_task:
+	Dq  65 DUP (0)
+T_R0:
+	Dq 0
+T_S0:
+	Dq SPP ;STACK0
+T_WARNING:
+	Dq -1
+T_STATE:
+	Dq 0
+T_BLK:
+	Dq 0
+T_CURFILE:
+	Dq 0
+T_HANDLER:
+	Dq 0
+T_HLD:
+	Dq 5
+T_BASE:
+	Dq 0AH
+	Dq PAD_SIZE DUP (0)
+T_PAD:
+	Dq PAD_SIZE DUP (0)
+T_ERminusA:
+	Dq 0
+T_ERminusU:
+	Dq 0
+T_DOESgreatA:
+	Dq 0
+;T_ALIGNminusBYTES:
+	Dq 0
+T_nTIB:
+	Dq 0
+T_greatIN:
+	Dq 5
+T_TIB:
+	Dq T_ATIB
+T_ATIB:
+	Dq TIB_SIZE DUP (0)
+T_SOURCEminusID:
+	Dq 0
+T_CURSTR:
+	Dq 0
+T_WBWminusNFA:
+	Dq 0
+T_WBWminusOFFS:
+	Dq 0
+T_CURRENT:
+	Dq T_FORTH+8
+T_SminusO:
+	Dq T_FORTH+8,T_FORTH+8
+	Dq 16 DUP (0)
+T_CONTEXT:
+	Dq T_SminusO
+T_greatOUT:
+	Dq 0
+T_WminusCNT:
+	Dq 0
+T_NNN:
+	Dq 0
+Mreserve:
+	Dq MUSEROFFS DUP (0)
+T_FORTH:
+	Dq 0			; 
+	Dq LastNFA		; 
+	Dq 0			; 
+	Dq 0			; 
+
+	db 'jjjjjjjj'
+
+
+ByeLevel DQ 0
+lastcur dd 0,0
+emit_buffer rq 1
+written_buffer rq 1
+
+file_handle		rq	1
+file_size		rq	1
+buff_addr		rq	1
+
+align 8
+TIBB	DB 512 DUP (?)
+CTOP	DB 0x100000 DUP (?)
+SPP	DQ 10 DUP (?)
+bytes_count dd ?
+character db ?
+
+
+section '.idata' import data readable writeable
+
+  library kernel32,'KERNEL32.DLL',\
+	user32,'USER32.DLL',\
+          Comdlg32,'COMDLG32.DLL',\
+	  gdi32,'GDI32.DLL'
+
+import Comdlg32,\
+         GetOpenFileNameA,'GetOpenFileNameA',\
+         GetSaveFileNameA,'GetSaveFileNameA'
+
+  include 'api/kernel32.inc'
+  include 'api/user32.inc'
+  include 'api/gdi32.inc'
+
+

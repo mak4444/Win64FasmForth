@@ -1,0 +1,196 @@
+
+lib\ext\caseins.f
+
+REQUIRE ASM_INTERPRET ~mak/gasm64/LEX.F 
+REQUIRE A; ~mak/gasm64/prefix.f 
+REQUIRE DISP ~mak/amd64/disasm.fs 
+
+CODE ZZ1
+        mov 16(%rbp),%rdx
+        cmp %rdx,(%rbp)
+        sbb 8(%rbp),%rax
+        mov $0,%rax
+        jge ll0
+        dec %rax
+ll0:	lea 24(%rbp),%rbp
+        retq
+END-CODE
+
+CODE ZZZ
+\  movzbl 0x0(%rsp),%eax
+\  movzbl (%eax),%eax
+\  movzbl 0x0(%rsp),%rax
+\  movzbl (%eax),%rax
+	mov    -8(%rbp),%eax
+	mov    -8(%rbp),%rax
+	add    (%r8,%r8,1),%r8d
+	add    (%rax,%rax,1),%rax
+ add %al,(%r8)
+
+mov    %dl,(%rax)
+ mov  $0x10,%rax
+ mov  $0x10,%al 
+ or    $0x10,%rax
+ or   $0x10,%al 
+ or   $0x10,%al 
+ adc  $0x10,%al 
+ sbb  $0x10,%al
+ AND  $0x10,%al
+                 
+ or   $0x100,%eax
+ adc  $0x100,%eax
+ sbb  $0x100,%eax
+ AND  $0x100,%eax
+ sub  $0x100,%rax
+ xor  $0x100,%rax
+ cmp  $0x100,%rax
+ mov  $0x100,%rax
+  not  %al
+  not  %eax
+
+   not    %rax
+   or   %al,%ch
+
+ add    0x10(%rbp),%al 
+ add    0x10(%rbp),%eax 
+ add    0x10(%rbp),%rax 
+ add %ah,(%rax)
+ add %al,(%rax)
+ add %al,(%rax)
+ add %al,(%r8)
+ add %rax,(%rax)
+ mov   0x10(%rbp),%rdx
+  mov 16(%rsp),%rdx
+
+ add   0x10(%rbp),%rax
+ xor   0x10(%rbp),%rax
+ mov   0x10(%rbp),%rax
+
+ add    (%rcx),%edx
+
+
+add   0x10(%rbp),%rax
+ADD 24(%rbp),%rbp
+lea 24(%rbp),%rbp
+add    (%rsi),%eax
+add    (%rdi),%eax
+add    (%rax),%ecx
+add    (%rcx),%ecx
+
+ test   %rax,0x10(%rbp)
+ xchg   0x10(%rbp),%rax
+
+ add    %rax,%rax
+ add  $0x100,%r8
+
+
+ ADD   %rbx,%rcx
+ ADD   %rcx,%rbx
+
+        add (%rbp),%rdx
+        add %rdx,0(%rbp)
+        cmp (%rbp),%rdx
+        cmp %rdx,(%rbp)
+
+ xchg   %rbx,%rcx
+ xchg   %rcx,%rbx
+ test   %rbx,%rcx
+ test   %rcx,%rbx
+
+
+
+ add  16(%rax),%rax
+ add   0x10(%rbp),%rax
+ add   0x7f(%rbp),%edx
+ add   0x100(%rax,%rax,2),%edx
+ add   0x100(%rsi),%edx
+ add   0x100(%rbp),%edx
+   add   %al,%ch
+   add   %al,%cl
+   add   %eax,%ecx
+
+	inc    %r12
+   imul  %r11
+   imul  %edx
+   imul  %rax
+   POP %rcx
+
+ notl   (%rax)
+ notl   (%rax,%rax)
+ notl   (%rsp)
+
+ notl   (%rax,%rax,1)
+   
+ notl   0x100(%rax,%rax,2)
+ notl   0x100(%rax,%rax,1)
+ notl   0x100(%rax,%rcx,1)
+ notl   0x100(%rcx,%rax,1)
+
+ notl   0x10(%rax,%rax,2)
+ notl   0x10(%rax,%rax,1)
+ notl   0x10(%rax,%rcx,1)
+ notl   0x10(%rcx,%rax,1)
+ 
+   negl   0x100(%rbx,%rsi,4)
+   negl   0x100(%rbx,%rsi,2)
+   imull  0x100(%rbx,%rsi,2)
+   imull  0x100(%rbx)
+   imull  -0xC(%rbx)
+   imull  0xFF(%rbx)
+   imull  0x7F(%rbx)
+   imull  0x80(%rbx)
+   imull  0x11223344(%rbx)
+   imull  (%rbx)
+PUSH   %r12
+
+	add (%rbx,%rcx,1),%edx
+	add (%rbx,%rcx,2),%edx
+
+	notl (%rax,%rax,1)
+	notl (%r8,%rax,1)
+	notl (%rax,%r8,1)
+	notl (%r8,%r8,1)
+	notq (%rax,%rax,1)
+	notq (%r8,%rax,1)
+	notq (%rax,%r8,1)
+	notq (%r8,%r8,1)
+
+	add    (%rax,%rax,1),%eax
+	add    (%r8,%rax,1),%eax
+	add    (%rax,%r8,1),%eax
+	add    (%r8,%r8,1),%eax
+	add    (%rax,%rax,1),%r8d
+	add    (%r8,%rax,1),%r8d
+	add    (%rax,%r8,1),%r8d
+	add    (%r8,%r8,1),%r8d
+	add    (%rax,%rax,1),%rax
+	add    (%r8,%rax,1),%rax
+	add    (%rax,%r8,1),%rax
+	add    (%r8,%r8,1),%rax
+	add    (%rax,%rax,1),%r8
+	add    (%r8,%rax,1),%r8
+	add    (%rax,%r8,1),%r8
+	add    (%r8,%r8,1),%r8
+
+ or   $0x100,%rdi
+ adc  $0x100,%rdi
+ sbb  $0x100,%rdi
+ AND  $0x100,%rdi
+ sub  $0x100,%rdi
+ xor  $0x100,%rdi
+ cmp  $0x100,%rdi
+ mov  $0x100,%rdi
+
+ add (%rbx,%rcx,1),%edx
+ add (%rbx,%rcx,2),%edx
+
+   %rax POP,
+   0 W,
+   0 C, $C0 C,
+END-CODE
+
+CR .( ' ZZZ DISP \ tst ) CR
+ : WWWW ?DO LOOP ; ' WWWW DISP 
+
+\eof
+
