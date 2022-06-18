@@ -30,6 +30,7 @@ LastCFA EQU INIT
 
 macro AHEADER FLAG,ID,F_CFA {
 	align 8
+	DQ	0,imgasm
 	DQ	F_CFA
 	DQ	FLAG
 	DQ	LastNFA
@@ -42,6 +43,7 @@ F_CFA:
 
 macro cfa_AHEADERP FLAG,ID,F_CFA {
 	align 8
+	DQ	0,amainfasm
 	DQ	cfa_#F_CFA
 	DQ	FLAG
 	DQ	LastNFA
@@ -54,6 +56,7 @@ lla_#F_CFA:
 
 macro cfa_AHEADER FLAG,ID,F_CFA {
 	align 8
+	DQ	0,amainfasm
 	DQ	cfa_#F_CFA and 0FFFFFFFFH
 	DQ	FLAG
 	DQ	LastNFA and 0FFFFFFFFH
@@ -2010,6 +2013,11 @@ cfa_AHEADER 0,"'TYPE",ticTYPE
  DD   cfa_TYPE and 0ffffffffh
  call cfa__TOVALUEminusCODE
 
+amainfasm:	DB @f-$-1,'spf\amain.fasm'
+@@:
+
+imgasm:	DB @f-$-1,'spf\img.asm'
+@@:
 
 main_task:
 	Dq  65 DUP (0)
