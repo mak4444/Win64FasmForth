@@ -5,7 +5,7 @@
 
 : CUR_POS ABORT ;
 : B_CR ( -- ) \ 94
-\ Перевод строки.
+\ юЧК8fюЧКa5ревюЧКaeюЧКa4 юЧКe1юЧКe2рокюЧКa8.
  10 EMIT
  13 EMIT
 ;
@@ -70,6 +70,11 @@ CREATE KERNELEXP
 
 : ZOPEN-FILE-SHARED ABORT ;
 : ZCREATE-FILE-SHARED ABORT ;
+: YDO ABORT ;
+: YQDO ABORT ;
+: ZUNLOOP ABORT ;
+: ZLEAVE ABORT ;
+
 
 : QVECT-CODE ABORT ;
 
