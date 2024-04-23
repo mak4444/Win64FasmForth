@@ -6,6 +6,9 @@
 : DBG ;
 : DBG1 ;
 
+: ?PAIRS        \ x1 x1 --
+  XOR IF -22 THROW THEN ;
+
 : DABS ( d -- ud ) \ 94 DOUBLE
 \ ud абсолютная величина d.
   DUP 0< IF DNEGATE THEN
@@ -153,7 +156,6 @@ VARIABLE AASAVE0
 '  _TOUSER-VALUE-CODE  VALUE TOUSER-VALUE-CODE
 
 
-
 : $!         ( addr len dest -- )
    PLACE ;
 
@@ -171,7 +173,7 @@ VARIABLE AASAVE0
 
 : <'>
 R>  1+ DUP 4 + >R  REL@ 4 + ;
-
+' <'> TO '<'>
 : , HERE ! CELL ALLOT ;
 
 : CHARS ;
@@ -182,30 +184,3 @@ R>  1+ DUP 4 + >R  REL@ 4 + ;
   */MOD NIP
 ;
 
-\EOF
-
-: R>     <'> C-R>    INLINE, ;   IMMEDIATE
-: >R     <'> C->R    INLINE, ;   IMMEDIATE
-
-
-: CHARS ( n1 -- n2 ) \ 94
-\ Прибавить размер символа к c-addr1 и получить c-addr2.
-; IMMEDIATE
-
-: >CELLS ( n1 -- n2 ) \ "to-cells" [http://forth.sourceforge.net/word/to-cells/index.html]
-\ Convert n1, the number of bytes, to n2, the corresponding number
-\ of cells. If n1 does not correspond to a whole number of cells, the
-\ rounding direction is system-defined.
-  CELLS
-;
-
-
-
-: 2CONSTANT  ( d --- )
-\ Create a new definition that has the following runtime behavior.
-\ Runtime: ( --- d) push the constant double number on the stack. 
-  CREATE HERE 2! 8 ALLOT DOES> 2@ ;
-
-
- 
- 
