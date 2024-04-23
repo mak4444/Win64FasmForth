@@ -6,130 +6,65 @@
   Ревизия - сентябрь 1999
 )
 
-
-: _DO   \ 94
-\ Интерпретация: семантика неопределена.
-\ Компиляция: ( C: -- do-sys )
-\ Положить do-sys на стек управления. Добавить семантику времени выполнения, 
-\ данную ниже, к текущему определению. Семантика незавершена до разрешения
-\ потребителем do-sys, таким как LOOP.
-\ Время выполнения: ( n1|u1 n2|u2 -- ) ( R: -- loop-sys )
-\ Установить параметры цикла на индекс n2|u2 и предел n1|u1. Неопределенная 
-\ ситуация возникает, если n1|u1 и n2|u2 не одного типа. Все, что уже 
-\ находилось на стеке возвратов, становится недоступным до тех пор, пока не 
-\ будут убраны параметры цикла.
- <'> XDO _COMPILE, 
-   0x68 C, DP A@ 4 ALLOT
-   0x52 C,    \ PUSH EDX
-   0x53 C,    \ PUSH EBX
-  4 ALIGN-NOP
-  DP A@ \ DUP TO :-SET
+: DO            \ Run: n1|u1 n2|u2 -- ; R: -- loop-sys           6.1.1240
+\ *G Begin a *\fo{DO ... LOOP} construct. Takes the end-value and
+\ ** start-value from the stack.
+  <'> YDO _COMPILE, HERE 0 Q, HERE 3
 ; IMMEDIATE
 
-: ?DO   \ 94 CORE EXT
-\ Интерпретация: семантика неопределена.
-\ Компиляция: ( C: -- do-sys )
-\ Положить do-sys на стек управления. Добавить семантику времени выполнения, 
-\ данную ниже, к текущему определению. Семантика незавершена до разрешения
-\ потребителем do-sys, таким как LOOP.
-\ Время выполнения: ( n1|u1 n2|u2 -- ) ( R: --  | loop-sys )
-\ Если n1|u1 равно n2|u2, продолжить выполнение с места, данного потребителем 
-\ do-sys. Иначе установить параметры цикла на индекс n2|u2 и предел n1|u1
-\ и продолжить выполнение сразу за ?DO. Неопределенная 
-\ ситуация возникает, если n1|u1 и n2|u2 не одного типа. Все, что уже 
-\ находилось на стеке возвратов, становится недоступным до тех пор, пока не 
-\ будут убраны параметры цикла.
-  ?COMP 
-\  OP0 @ :-SET  UMAX TO :-SET
-\  'NIPNIP INLINE,
-
-  0x48 C, 0x8D C, 0x6D C, 16 C,  \  lea    0x8*2(%rbp),%rbp
-  0xBB C, HERE 4 ALLOT			\  mov        ,%ebx
-  
-  0x3B C, 0x45 C, -16 C,       \  cmp    -0x8(%rbp),%eax  
-\ jne DOTSTTT+0x12 
-  0x75 C, 0x6 C,				\ jne
-  0x48 C, 0x8B C, 0x45 C, -8 C,       \ mov    -8(%rbp),%rax
-  0xFF C, 0xE3 C,				\ jmpq   *%rbx
-  0x53 C,						\ push   %rbx
-  0xBB C,  0x80000000 L,         \ mov    $0x80000000,%ebx 
-  0x2B C, 0x5D C, -16 C,       \ sub    -0x8(%rbp),%ebx
-  0x53 C,						\ push   %rbx
-  0x3 C, 0xD8 C, 				\ add    %eax,%ebx
-  0x53 C,						\ push   %rbx
-  0x48 C, 0x8B C, 0x45 C, -8 C, 		\ mov    -8(%rbp),%rax
-  
-
- \ 'C-?DO INLINE,
-  DP A@ \ DUP TO :-SET
+: ?DO           \ Run: n1|u1 n2|u2 -- ; R: -- | loop-sys ; 6.2.0620
+\ *G Compile a *\fo{DO} which will only begin loop execution if
+\ ** the loop parameters do not specify an interation count of 0.
+  <'> YQDO _COMPILE, HERE 0 Q, HERE 3
 ; IMMEDIATE
 
-
-: _LOOP   \ 94
-\ Интерпретация: ( C: do-sys -- )
-\ Добавить семантику времени выполнения, данную ниже, к текущему определению.
-\ Разрешить все появления LEAVE между позицией, данной do-sys и следующей
-\ позицией передачи управления для выполнения слов за LOOP.
-\ Время выполнения: ( -- ) ( R: loop-sys1 --  | loop-sys2 )
-\ Неопределенная ситуация возникает, если параметры цикла недоступны.
-\ Прибавить единицу к индексу цикла. Если индекс цикла стал равным пределу, 
-\ убрать параметры цикла и продолжить выполнение сразу за циклом. Иначе 
-\ продолжить выполнение с начала цикла.
-  ?COMP 
-\  0x2404FF48 L, \ inc qword [rsp]
-  0x24 0x4FF W, C, \ inc dword [esp]
+: LOOP          \ Run: -- ; R: loop-sys1 -- | loop-sys2         6.1.1800
+\ *G The closing statement of a *\fo{DO ... LOOP} construct.
+\ ** Increments the index and terminates when the index crosses
+\ ** the limit.
+  3 ?PAIRS
+ 0x49 C, 0xC6FF W, \ inc r14
+ 0x49 C, 0xC7FF W, \ inc r15
   HERE 2+ -  DUP SHORT? \  SetOP SetJP
   IF
     0x71 C, C, \ jno short 
   ELSE
     4 - 0xF C, 0x81 C, L, \ jno near
   THEN  \ SetOP
-  0x48 C, 0x1824648D L, \ lea 0x18(%rsp),%rsp
-  DP A@ SWAP L!
+  0x5E41 W, \ pop r14
+  0x5F41 W, \ pop r15
+  0x59 C, \ pop rcx
+  HERE SWAP !
 ; IMMEDIATE
 
-: +LOOP    \ 94
-\ Интерпретация: ( C: do-sys -- )
-\ Добавить семантику времени выполнения, данную ниже, к текущему определению.
-\ Разрешить все появления LEAVE между позицией, данной do-sys и следующей
-\ позицией передачи управления для выполнения слов за LOOP.
-\ Время выполнения: ( n -- ) ( R: loop-sys1 --  | loop-sys2 )
-\ Неопределенная ситуация возникает, если параметры цикла недоступны.
-\ Прибавить n к индексу цикла. Если индекс цикла не пересек границу между
-\ пределом цикла минус единица и пределом цикла, продолжить выполнение с
-\ начала цикла. Иначе убрать параметры цикла и продолжить выполнение сразу
-\ за циклом.
-   ?COMP  
-   <'> ADD[ESP],TOS  _COMPILE,
-   HERE 2+  - 
-   DUP  SHORT? \  SetOP SetJP
-  IF    0x71 C, C, \ jno short 
-  ELSE    4 - 0xF C, 0x81 C, L, \ jno near
-  THEN    \  SetOP
-   0x48 C, 0x1824648D L, \ lea esp, 0c [esp]
-  DP A@ SWAP   L!
-; IMMEDIATE
+: +LOOP         \ Run: n -- ; R: loop-sys1 -- | loop-sys2       6.1.0140
+\ *G As *\fo{LOOP} except that you specify the increment on the
+\ ** stack. The action of *\fo{n +LOOP} is peculiar when n is
+\ ** negative:
+\ *C   -1 0 ?DO  i .  -1 +LOOP
+\ *P prints *\fo{0 -1}, whereas:
+\ *C   0 0 ?DO  i .  -1 +LOOP
+\ *P prints nothing. This a result of the mathematical trick used
+\ ** to detect the terminating condition. To prevent confusion
+\ ** avoid using *\fo{n +LOOP} with negative *\i{n}.
+  3 ?PAIRS
+	0x49 C, 0xC601 W,	\   	add    %rax,%r14
+	0x49 C, 0xC701 W,	\	add    %rax,%r15
+	<'> DROP _COMPILE,
+  HERE 2+ -  DUP SHORT? \  SetOP SetJP
+  IF
+    0x71 C, C, \ jno short 
+  ELSE
+    4 - 0xF C, 0x81 C, L, \ jno near
+  THEN
+  0x5E41 W, \ pop r14
+  0x5F41 W, \ pop r15
+  0x59 C, \ pop rcx
+  HERE SWAP !
+ ; IMMEDIATE
 
-
-: LEAVE    \ 94
-\ Интерпретация: семантика неопределена.
-\ Выполнение: ( -- ) ( R: loop-sys -- )
-\ Убрать текущие параметры цикла. Неопределенная ситуация возникает, если 
-\ они недоступны. Продолжить выполнение сразу за самыми внутренними DO ... LOOP 
-\ или DO ... +LOOP.
-  ?COMP
-  0x48 C, 0x1024648D L, \ lea esp, 0x10 [esp]
-  0xC3 C,  \ ret
-; IMMEDIATE
-
-: UNLOOP  \ 94
-\ Интерпретация: семантика неопределена.
-\ Выполнение: ( -- ) ( R: loop-sys -- )
-\ Убрать параметры цикла текущего уровня. UNLOOP требуется для каждого
-\ уровня вложения циклов перед выходом из определения по EXIT.
-\ Неоднозначная ситуация возникает, если параметры цикла недоступны.
-  ?COMP
-  0x48 C, 0x1824648D L, \ lea 0x18(%rsp),%rsp
+: I  <'> DUP  _COMPILE,
+  0x4C C, 0xF089 W,	\	mov %r14,%rax
 ; IMMEDIATE
 
 DECIMAL
