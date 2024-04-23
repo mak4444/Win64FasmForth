@@ -25,6 +25,7 @@ VARIABLE YDP0
    YDP ! DP !
  THEN ;
 
+ VECT CFA_ALIGN  ' NOOP TO CFA_ALIGN
 
 : YSHEADER ( addr u -- )
   ?YDP><DP
@@ -38,8 +39,8 @@ DBG\  DBG_CURFILE ,
 	THEN
 	 CURRENT @ +SWORD
 	?YDP><DP
-	ALIGN
-    HERE SWAP ! ( ......... cfa )
+	CFA_ALIGN
+    HERE SWAP ! ( cfa init )
 ;
 
 \ VECT SHEADER
@@ -189,18 +190,7 @@ DBG\  DBG_CURFILE ,
   USER-ALIGNED
   USER-ALLOT  L,
 ;
-: USER ( "<spaces>name" -- ) \ ��������� ���������� ������
+: USER ( "<spaces>name" -- )
   USER-CREATE
   8 USER-ALLOT
-;
-\EOF
-
-: USER-VALUE ( "<spaces>name" -- ) \ 94 CORE EXT
-  HEADER
-  USER-VALUE-CODE
-   COMPILE,
-  USER-ALIGNED SWAP L,
-  4 + USER-ALLOT
-  TOUSER-VALUE-CODE
-   COMPILE,
 ;
