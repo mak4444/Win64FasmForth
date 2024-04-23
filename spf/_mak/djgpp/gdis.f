@@ -247,6 +247,11 @@ W-CNT  OF ." T_WminusCNT" ENDOF
    CR ."  DD "   DUP @ GN.
  CELL+ ;
 
+: .QADR ( ADDR -- ADDR1 )
+\   CR ."  DD "   DUP @ ." ("  GN.  ." ) and 0ffffffffh"
+   CR ."  DQ "   DUP @ GN.
+ CELL+ CELL+ ;
+
 : .ADR68 ( ADDR -- ADDR1 )
    CR ."  DD 68 "   DUP @ DUP H. GN. CELL+ ;
 
@@ -377,6 +382,21 @@ C" C>S" FIND NIP 0=
                  THEN
 
                  DUP CELL- REL@ CELL+ 
+                 ['] YDO  =
+                 IF   .QADR  EXIT
+                 THEN
+
+                 DUP CELL- REL@ CELL+ 
+                 ['] YQDO  =
+                 IF   .QADR  EXIT
+                 THEN
+
+                 DUP CELL- REL@ CELL+ 
+                 '<'>  =
+                 IF  CR ."  call " DUP 1A_GD_STEP  EXIT
+                 THEN
+
+                 DUP CELL- REL@ CELL+ 
                  VALUE-CODE  =
                  IF   .INT  EXIT
                  THEN
@@ -401,6 +421,8 @@ C" C>S" FIND NIP 0=
   DUP3B?[EBP]   IF  3_GD_STEP   EXIT THEN
   DUP3B?        IF  3_GD_STEP   EXIT THEN
   DUP2B?        IF  2_GD_STEP   EXIT THEN
+  DUP 0C601 =   IF  2_GD_STEP   EXIT THEN  \ add    %eax,%esi
+  DUP 0C701 =   IF  2_GD_STEP   EXIT THEN  \ add    %eax,%edi
   DUP 0DB0A =   IF  2_GD_STEP   EXIT THEN  \ OR  BL, BL
   DUP 0C90A =   IF  2_GD_STEP   EXIT THEN  \ OR  CL, CL
   DUP 0038B =   IF  2_GD_STEP   EXIT THEN  \ MOV  EAX, [EBX]
@@ -494,10 +516,14 @@ C" C>S" FIND NIP 0=
   DUP 0FA83 =   IF  3_GD_STEP   EXIT THEN  \ CMP EDX, # 3
   DUP 07D83 =   IF  4_GD_STEP   EXIT THEN  \ CMP X [EBP] , # Y
   DUP 07D89 =   IF  3_GD_STEP   EXIT THEN  \ MOV  X [EBP], EDI
+  DUP 0F089 =   IF  2_GD_STEP   EXIT THEN  \ mov    %esi,%eax
   DUP 0688B =   IF  3_GD_STEP   EXIT THEN  \ MOV  EBP, 4 [EAX]
   DUP 0CC8B =   IF  2_GD_STEP   EXIT THEN
   DUP 0F58B =   IF  2_GD_STEP   EXIT THEN
   DUP 0FC8B =   IF  2_GD_STEP   EXIT THEN
+
+  DUP 0C6FF =   IF  2_GD_STEP   EXIT THEN \ inc  %esi
+  DUP 0C7FF =   IF  2_GD_STEP   EXIT THEN \ inc  %edi
 
   DUP 0F0FF AND
       0800F =   IF  2A_GD_STEP  EXIT THEN  \ JNO  X
