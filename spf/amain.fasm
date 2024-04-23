@@ -7,6 +7,9 @@ IDM_NEW   = 101
 IDM_EXIT  = 102
 IDM_ABOUT = 901
 
+;R13 tast
+;R14 R15 loop
+
 format PE64 console
 ;stack 1000000h                ; stack size
 
@@ -71,7 +74,7 @@ cfa_#F_CFA:
 reserve EQU Mreserve-main_task
 
 FORTH_ENTRY:
-        mov	r14, main_task
+        mov	R13, main_task
 	mov	rbp,SPP
 ;	call cfa_XLIT+00H
 ; 	DD 090H
@@ -670,13 +673,13 @@ cfa_AHEADER 0,"RP!",RPsave
 
 
 cfa_AHEADER 0,"TlsIndex!",TlsIndexSet
-     	db 49h,89h,0c6h            ;	mov    %rax,%r14
+     	mov    R13,rax
 	jmp  cfa_DROP
 
 cfa_AHEADER 0,"TlsIndex@",TlsIndexGet
       	LEA RBP, [RBP-8]          ;	lea    -0x8(%rbp),%rbp
       	MOV [RBP], RAX          ;	mov    %rax,0x0(%rbp)
-	mov	rax,r14
+	mov	rax,R13
      	ret   
 
 cfa_AHEADER 0,"CDR",CDR
@@ -769,40 +772,7 @@ cfa_AHEADER 0,"PERFORM",PERFORM
 ;cfa_AHEADER 0,"HPOINT",HPOINT
 cfa_AHEADER 0,"NOOP",NOOP
 	ret
-cfa_AHEADER 0,"I",I
-     	LEA RBP, [RBP-8]         ;	lea    -0x8(%rbp),%rbp
-     	MOV [RBP], RAX         ;	mov    %rax,0x0(%rbp)
-     	db 48h,8bh,44h,24h,08h      ;	mov    0x8(%rsp),%rax
-     	db 48h,2bh,44h,24h,10h      ;	sub    0x10(%rsp),%rax
-	ret   
-cfa_AHEADER 0,"J",J
-     	LEA RBP, [RBP-8]         ;	lea    -0x8(%rbp),%rbp
-     	MOV [RBP], RAX         ;	mov    %rax,0x0(%rbp)
-      MOV RAX, [RSP+8*4]
-      SUB RAX, [RSP+8*5]
-	ret   
 
-cfa_AHEADER 0,"ADDxESPycomTOS",ADD_xESP_ycomTOS
-;     	db 01h,44h,24h,08h         ;	add    %eax,0x8(%rsp)
-	ADD  [RSP+8],EAX
-     	MOV RAX, [RBP]         ;	mov    0x0(%rbp),%rax
-     	db 48h,8dh,6dh,08h         ;	lea    0x8(%rbp),%rbp
-     	ret
-
-cfa_AHEADER 0,"QQTT",QQTT
-;	inc qword [rsp]
-	LEA	EDX,[RAX+RDX]
-	ret   
-
-cfa_AHEADER 0,"XDO",XDO
-     	db 0bah,00h,00h,00h,80h      ;	mov    $0x80000000,%edx
-;	MOV RDX,8000000000000000H
-	SUB	RDX,[RBP]
-	LEA	RBX,[RAX+RDX]
-	MOV	RAX,[RBP+8]
-;     	db 89h,0d2h               ;	mov    %edx,%edx
-     	db 48h,8dh,6dh,10h         ;	lea    0x10(%rbp),%rbp
-     	ret   
 cfa_AHEADER 0,"QBRANCH",QBRANCH
      	or	rax,rax
      	MOV RAX, [RBP]         ;	mov    0x0(%rbp),%rax
@@ -816,6 +786,58 @@ cfa_AHEADER 0,"XLIT",XLIT
      	db 48h,98h               ;	cltq   
      	db 48h,83h,0c2h,04h         ;	add    $0x4,%rdx
      	db 0ffh,0e2h               ;	jmpq   *%rdx
+
+cfa_AHEADER 0,"YDO",YDO
+	pop	rdx		; rdx = return address
+	mov	rcx, [rdx]	; exit address
+	lea	rdx, [rdx+8]	; step over it
+	push	rcx		; rcx = loop exit address
+	push	r15		; r15 = old index - limit - msb
+	push	r14		; r14 = old index
+
+	mov	r15, rax	; rax = index, r15 = index
+	sub     r15, [rbp]	; r15 = index - limit
+	btc	r15, 63		; r15 = index - limit - msb
+	mov	r14, rax	; r14 = index
+
+	mov	rax, [rbp+8]	; restore TOS
+	lea	rbp, [rbp+2*8]	; step data stack
+
+	jmp	rdx
+
+cfa_AHEADER 0,"YQDO",YQDO
+	cmp rax,[rbp]
+	jne cfa_YDO
+	mov	rbx, [rbp+8]	; restore TOS
+	lea	rbp, [rbp+2*8]	; step data stack
+	pop	rdx
+	mov	rdx, [rdx]	; take exit address
+	jmp	rdx
+
+cfa_AHEADER 0,"UNLOOP",UNLOOP
+; RSP+18: ESP+C:  exit address
+; RSP+10: ESP+8:  old index-limit-$8000.0000  (incremented by LOOP)
+; RSP+08: ESP+4:  old index                   (incremented by LOOP)
+; RSP+00: return address
+; R15:    new index-limit-xorbit63
+; R14:    new index
+        pop     rdx	; return address and discard it
+        pop	r14	; index
+        pop	r15	; index-limit-xorbit63
+	pop	rcx
+	jmp	rdx
+
+cfa_AHEADER 0,"LEAVE",LEAVE
+; RSP+18: ESP+C:  exit address
+; RSP+10: ESP+8:  old index-limit-$8000.0000  (incremented by LOOP)
+; RSP+08: ESP+4:  old index                   (incremented by LOOP)
+; RSP+00: return address
+; R15:    new index-limit-xorbit63
+; R14:    new index
+        pop     rdx	; return address and discard it
+        pop	r14	; index
+        pop	r15	; index-limit-xorbit63
+        ret
 
 cfa_AHEADER 0,"NNN",NNN
 	call cfa__USERminusCODE
@@ -882,7 +904,7 @@ cfa_AHEADER 0,"_USER-VALUE-CODE", _USERminusVALUEminusCODE
     	MOV [RBP], RAX         ;	mov    %rax,0x0(%rbp)
     	db 58h                 ;	pop    %rax
     	db 8bh,00h               ;	mov    (%rax),%eax
-    	db 4ch,01h,0f0h            ;	add    %r14,%rax
+    	add rax,R13
     	db 8bh,00h               ;	mov    (%rax),%eax
     	ret   
 
@@ -895,7 +917,7 @@ cfa_AHEADER 0,"_TOUSER-VALUE-CODE",_TOUSERminusVALUEminusCODE
     	db 5bh                  ;	pop    %rbx
     	db 83h,0ebh,09h             ;	sub    $0x9,%ebx
     	db 8bh,1bh                ;	mov    (%rbx),%ebx
-    	db 44h,01h,0f3h             ;	add    %r14d,%ebx
+    	add    ebx,R13d
     	db 89h,03h                ;	mov    %eax,(%rbx)
     	MOV RAX, [RBP]         ;	mov    0x0(%rbp),%rax
     	db 48h,8dh,6dh,08h         ;	lea    0x8(%rbp),%rbp
@@ -913,7 +935,7 @@ cfa_AHEADER 0,"_USER-CODE", _USERminusCODE
     	MOV [RBP], RAX          ;	mov    %rax,0x0(%rbp)
     	db 58h                  ;	pop    %rax
     	db 8bh,00h                ;	mov    (%rax),%eax
-    	db 4ch,01h,0f0h            ;	add    %r14,%rax
+    	add    rax,R13
 	ret   
 
 cfa_AHEADER 0,"DOES>A",DOESgreatA
@@ -1559,9 +1581,9 @@ cfa_AHEADER 0,'BEEP44',BEEP44
 	retn
 
 cfa_AHEADER 0,'TASKININ',TASKININ
-	mov	rax , r14
+	mov	rax , R13
 	lea	rbp,[rsp-10000h]
-	lea	r14,[rsp-18000h]
+	lea	R13,[rsp-18000h]
 	retn
 
 cfa_AHEADER 0,'FPI',FPI
