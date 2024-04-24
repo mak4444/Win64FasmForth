@@ -100,22 +100,8 @@ PAD_SIZE EQU 1027
 
 include 'img.asm'
 
-cfa_AHEADER 0 ,'VVV',cfa_VVV
-
- call cfa_XLIT+00H
- DD 0270FH
- call cfa_dot+00H
- DB 0C3H
-
-AHEADER 0 ,'ZZZ',cfa_ZZZ
-
- call cfa_XLIT+00H
- DD 0270FH
- call cfa_dot+00H
- DB 0C3H
-
-
 cfa_AHEADER 0,"BYE",BYE
+	and	rsp,not 0fh 
 	xor	edi,edi		; exit code 0
 	invoke	ExitProcess,0
 
