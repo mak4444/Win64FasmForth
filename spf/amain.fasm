@@ -808,7 +808,7 @@ cfa_AHEADER 0,"YDO",YDO
 cfa_AHEADER 0,"YQDO",YQDO
 	cmp rax,[rbp]
 	jne cfa_YDO
-	mov	rbx, [rbp+8]	; restore TOS
+	mov	rax, [rbp+8]	; restore TOS
 	lea	rbp, [rbp+2*8]	; step data stack
 	pop	rdx
 	mov	rdx, [rdx]	; take exit address
