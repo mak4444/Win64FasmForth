@@ -613,6 +613,12 @@ cfa_AHEADER 0,"DUP>R",DUPgreatR
      	db 50h                  ;	push   %rax
      	db 0ffh,0e3h               ;	jmpq   *%rbx
 
+cfa_AHEADER 0,"J",cfa_J
+	LEA     RBP, [RBP-08]
+	MOV     [RBP], RBX
+	MOV     RAX, [RSP+08]
+	RET
+
 cfa_AHEADER 0,"2R>",_2Rgreat
      	db 48h,8bh,1ch,24h         ;	mov    (%rsp),%rbx
      	db 48h,89h,45h,0f8h         ;	mov    %rax,-0x8(%rbp)
@@ -2129,5 +2135,4 @@ import Comdlg32,\
   include 'api/kernel32.inc'
   include 'api/user32.inc'
   include 'api/gdi32.inc'
-
 
