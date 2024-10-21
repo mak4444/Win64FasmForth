@@ -1,5 +1,5 @@
 REQUIRE NUMBER? ~mak/lib/fpcnum.f
-REQUIRE API_2: lib\WAPI.4
+REQUIRE WAPI_2: lib\WAPI.4
 
 KERNEL32DLL WAPI2: GetCurrentDirectoryA	GetCurrentDirectoryA
 
