@@ -33,6 +33,7 @@ USER32DLL WAPI12: CreateWindowExA	CreateWindowExA
 KERNEL32DLL WAPI1: GetModuleHandleA GetModuleHandleA
 USER32DLL WAPI1: UpdateWindow UpdateWindow
 USER32DLL WAPI3: SetWindowLongPtrA SetWindowLongPtrA
+USER32DLL WAPI3: SetWindowLongA SetWindowLongA
 USER32DLL WAPI2: ReleaseDC	ReleaseDC
 USER32DLL WAPI1: GetDC	GetDC
 USER32DLL WAPI2: ShowWindow	ShowWindow

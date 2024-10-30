@@ -838,13 +838,16 @@ EXPORT \ ---------------------------------------
  CreateWindowExA
   TO EMyhwnd
 
+ ['] MyEdWndProc 
+  GWLP_WNDPROC 
   EMyhwnd
- GWLP_WNDPROC ['] MyEdWndProc 
- SetWindowLongPtrA
- CR ." Z SetWindowLongPtrA=" DUP H.
+  SetWindowLongPtrA
+\ SetWindowLongA
+ CR ." Z SetWindowLongA=" DUP H.
  DUP 0=
- IF GetLastError  H. THEN
- TO EdWndProc
+ IF GetLastError ." $" H. THEN
+
+  TO EdWndProc
 
   EDIT_FN C@
   IF
