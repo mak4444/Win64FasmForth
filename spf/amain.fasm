@@ -1436,6 +1436,13 @@ cfa_AHEADER 0,'YAPI_12',YAPI_12
 	retn
 
 
+cfa_AHEADER 0,'YAPI_10',YAPI_10
+	lea	rbx,[@f]
+	jmp	ycfa_API_10
+@@:	CALL	rax
+	add	rsp,$60 
+	retn
+
 cfa_AHEADER 0,'YAPI_6',YAPI_6
 	lea	rbx,[@f]
 	jmp	ycfa_API_6
@@ -1459,7 +1466,7 @@ cfa_AHEADER 0,'YAPI_4',YAPI_4
 
 cfa_AHEADER 0,'YAPI_3',YAPI_3
 	lea	rbx,[@f]
-	jmp	ycfa_API_4
+	jmp	ycfa_API_3
 @@:	CALL	rax
 	add	rsp,$20 
 	retn
@@ -1492,6 +1499,13 @@ cfa_AHEADER 0,'WAPI_12',WAPI_12
 	and	rcx ,$f
 	JZ	cfa_YAPI_12
 @@:	CALL	cfa_YAPI_12
+	RET
+
+cfa_AHEADER 0,'WAPI_10',WAPI_10
+	mov	rcx ,rsp
+	and	rcx ,$f
+	JZ	cfa_YAPI_10
+@@:	CALL	cfa_YAPI_10
 	RET
 
 cfa_AHEADER 0,'WAPI_6',WAPI_6
