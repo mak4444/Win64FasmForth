@@ -1387,178 +1387,6 @@ cfa_AHEADER 0,'XAPI_0',XAPI_0
 	add	rsp,$20 
 	retn
 
-ycfa_API_12:
-	push	qword [rbp]
-	lea	rbp,[rbp+8]
-ycfa_API_11:
-	push	qword [rbp]
-	lea	rbp,[rbp+8]
-ycfa_API_10:
-	push	qword [rbp]
-	lea	rbp,[rbp+8]
-ycfa_API_9:
-	push	qword [rbp]
-	lea	rbp,[rbp+8]
-ycfa_API_8:
-	push	qword [rbp]
-	lea	rbp,[rbp+8]
-ycfa_API_7:
-	push	qword [rbp]
-	lea	rbp,[rbp+8]
-ycfa_API_6:
-	push	qword [rbp]
-	lea	rbp,[rbp+8]
-ycfa_API_5:
-	push	qword [rbp]
-	lea	rbp,[rbp+8]
-ycfa_API_4:
-	mov	r9,[rbp]
-	lea	rbp,[rbp+8]
-ycfa_API_3:
-	mov	r8,[rbp]
-	lea	rbp,[rbp+8]
-ycfa_API_2:
-	mov	rdx,[rbp]
-	lea	rbp,[rbp+8]
-ycfa_API_1:
-	mov	rcx,[rbp]
-	lea	rbp,[rbp+8]
-ycfa_API_0:
-	sub	rsp,$20
-	jmp	rbx
-
-
-cfa_AHEADER 0,'YAPI_12',YAPI_12
-	lea	rbx,[@f]
-	jmp	ycfa_API_12
-@@:	CALL	rax
-	add	rsp,$60 
-	retn
-
-
-cfa_AHEADER 0,'YAPI_10',YAPI_10
-	lea	rbx,[@f]
-	jmp	ycfa_API_10
-@@:	CALL	rax
-	add	rsp,$60 
-	retn
-
-cfa_AHEADER 0,'YAPI_6',YAPI_6
-	lea	rbx,[@f]
-	jmp	ycfa_API_6
-@@:	CALL	rax
-	add	rsp,$30 
-	retn
-
-cfa_AHEADER 0,'YAPI_5',YAPI_5
-	lea	rbx,[@f]
-	jmp	ycfa_API_5
-@@:	CALL	rax
-	add	rsp,$28 
-	retn
-
-cfa_AHEADER 0,'YAPI_4',YAPI_4
-	lea	rbx,[@f]
-	jmp	ycfa_API_4
-@@:	CALL	rax
-	add	rsp,$20 
-	retn
-
-cfa_AHEADER 0,'YAPI_3',YAPI_3
-	lea	rbx,[@f]
-	jmp	ycfa_API_3
-@@:	CALL	rax
-	add	rsp,$20 
-	retn
-
-cfa_AHEADER 0,'YAPI_2',YAPI_2
-	lea	rbx,[@f]
-	jmp	ycfa_API_2
-@@:	CALL	rax
-	add	rsp,$20 
-	retn
-
-cfa_AHEADER 0,'YAPI_1',YAPI_1
-	mov	rcx,[rbp]
-	lea	rbp,[rbp+8]
-	sub	rsp,$20
-	CALL	rax
-	add	rsp,$20 
-	retn
-
-
-cfa_AHEADER 0,'YAPI_0',YAPI_0
-	sub	rsp,$20
-	CALL	rax
-	add	rsp,$20 
-	retn
-
-
-cfa_AHEADER 0,'WAPI_12',WAPI_12
-	mov	rcx ,rsp
-	and	rcx ,$f
-	JZ	cfa_YAPI_12
-@@:	CALL	cfa_YAPI_12
-	RET
-
-cfa_AHEADER 0,'WAPI_10',WAPI_10
-	mov	rcx ,rsp
-	and	rcx ,$f
-	JZ	cfa_YAPI_10
-@@:	CALL	cfa_YAPI_10
-	RET
-
-cfa_AHEADER 0,'WAPI_6',WAPI_6
-	mov	rcx ,rsp
-	and	rcx ,$f
-	JZ	cfa_YAPI_6
-@@:	CALL	cfa_YAPI_6
-	RET
-
-
-cfa_AHEADER 0,'WAPI_5',WAPI_5
-	mov	rcx ,rsp
-	and	rcx ,$f
-	JZ	cfa_YAPI_5
-@@:	CALL	cfa_YAPI_5
-	RET
-
-cfa_AHEADER 0,'WAPI_4',WAPI_4
-	mov	rcx ,rsp
-	and	rcx ,$f
-	JZ	cfa_YAPI_4
-@@:	CALL	cfa_YAPI_4
-	RET
-
-cfa_AHEADER 0,'WAPI_3',WAPI_3
-	mov	rcx ,rsp
-	and	rcx ,$f
-	JZ	cfa_YAPI_3
-@@:	CALL	cfa_YAPI_3
-	RET
-
-cfa_AHEADER 0,'WAPI_2',WAPI_2
-	mov	rcx ,rsp
-	and	rcx ,$f
-	JZ	cfa_YAPI_2
-@@:	CALL	cfa_YAPI_2
-	RET
-
-cfa_AHEADER 0,'WAPI_1',WAPI_1
-	mov	rcx ,rsp
-	and	rcx ,$f
-	JZ	cfa_YAPI_1
-@@:	CALL	cfa_YAPI_1
-	RET
-
-cfa_AHEADER 0,'WAPI_0',WAPI_0
-	mov	rcx ,rsp
-	and	rcx ,$f
-	JZ	cfa_YAPI_0
-@@:	CALL	cfa_YAPI_0
-	RET
-
-
 cfa_AHEADER 0,'DLL_L',DLL_L
 	mov	rbx, rsp
 	and     rbx, 0fh
@@ -1578,6 +1406,101 @@ cfa_AHEADER 0,'DLL_F',DLL_F
 cfa_AHEADER 0,'DLL_S',DLL_S
 	invoke	GetProcAddress,qword [rbp],rax
 	lea	rbp,[rbp+8]
+	retn
+
+
+cfa_AHEADER 0,'NXCALL0',NXCALL0
+	MOV     R12, RSP
+	SUB     RSP, 20h
+	AND     RSP, -10h
+	CALL    RAX
+	MOV     RSP, R12
+	RET
+
+cfa_AHEADER 0,'NXCALL1',NXCALL1
+	MOV     R12, RSP
+	SUB     RSP, 20h
+	AND     RSP, -10h
+	MOV     RCX, [RBP]
+	CALL    RAX
+	LEA     RBP, [RBP+08]
+	MOV     RSP, R12
+	RET
+
+cfa_AHEADER 0,'NXCALL2',NXCALL2
+	MOV     R12, RSP
+	SUB     RSP, 20h
+	AND     RSP, -10h
+	MOV     RCX, [RBP+08]
+	MOV     RDX, [RBP]
+	CALL    RAX
+	LEA     RBP, [RBP+10H]
+	MOV     RSP, R12
+	RET
+
+cfa_AHEADER 0,'NXCALL3',NXCALL3
+	MOV     R12, RSP
+	SUB     RSP, 20h
+	AND     RSP, -10h
+	MOV     RCX, [RBP+10H]
+	MOV     RDX, [RBP+08]
+	MOV     R8, [RBP]
+	CALL    RAX
+	LEA     RBP, [RBP+18H]
+	MOV     RSP, R12
+	RET
+
+cfa_AHEADER 0,'NXCALL4',NXCALL4
+	MOV     R12, RSP
+	SUB     RSP, 20h
+	AND     RSP, -10h
+	MOV     RCX, [RBP+18h]
+	MOV     RDX, [RBP+10h]
+	MOV     R8, [RBP+08]
+	MOV     R9, [RBP]
+	CALL    RAX
+	LEA     RBP, [RBP+20h]
+	MOV     RSP, R12
+	RET
+
+NXCALLS: dq   cfa_NXCALL0,cfa_NXCALL1,cfa_NXCALL2,cfa_NXCALL3,cfa_NXCALL4
+	
+NXCALLS4:
+	MOV     RBX, RAX
+	MOV     RAX, [RBP]
+	LEA     RBP, [RBP+08]
+	JMP     qword [RBX*8+NXCALLS]
+
+cfa_AHEADER 0,'NXCALL',NXCALL
+
+	CMP     RAX, 04
+	JLE  NXCALLS4
+	PUSH    R13
+
+	MOV     R12, RSP
+	LEA    RBX, [RAX*8]
+	MOV     R11, [RBP]
+	SUB     RSP, RBX
+	AND     RSP, -10h
+	MOV     R10, RBX
+	MOV     RCX, [R10+RBP]
+	SUB     R10, 08
+	MOV     RDX, [R10+RBP]
+	SUB     R10, 08
+	MOV     R8, [R10+RBP]
+	SUB     R10, 08
+	MOV     R9, [R10+RBP]
+	SUB     R10, 08
+	MOV     R13, 00000020h
+@@:	MOV     RAX, [R10+RBP] ; 
+	MOV     [RSP+R13], RAX
+	ADD     R13, 08
+	SUB     R10, 08
+	JNZ  @b
+	CALL    R11
+	LEA     RBP, [RBX+RBP+08]
+	MOV     RSP, R12
+	POP     R13
 	retn
 
 cfa_AHEADER 0,'BEEP44',BEEP44
