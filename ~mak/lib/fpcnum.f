@@ -121,16 +121,14 @@ REQUIRE [IFNDEF] ~nn/lib/ifdef.f
          THEN
               2DUP + 1- C@ UPC [CHAR] H =
          IF  1+  SWAP 2- SWAP  HHH-SLITERAL
-		IF RDROP RDROP
-		ELSE -2001 THROW
-		THEN EXIT
+		IF RDROP RDROP  EXIT
+		THEN	2R@
          THEN
 
              2DUP + 1- C@ UPC [CHAR] B = BASE @ 0x10 <> AND
          IF   1- BIN-SLITERAL
-		IF RDROP RDROP 
-		ELSE -2001 THROW
-		THEN EXIT
+		IF RDROP RDROP  EXIT
+		THEN	2R@
          THEN
 
              OVER @ 0xFF00FF  AND 0x270027 ( '\0')  = 
