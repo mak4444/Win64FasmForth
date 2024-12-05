@@ -12,21 +12,16 @@ IDM_ABOUT = 901
 
 format PE64 console
 ;stack 1000000h                ; stack size
+;stack 90000h,60000h                ; stack size
+
 
 ; executable at 10000h
+IMAGE_BASE = $-rva $
 cfa_img_org:
  	call	FORTH_ENTRY
 	xor	edi,edi		; exit code 0
 	invoke	ExitProcess,0
 	
-cfa_EMIT_M:
-	mov	[character],al
-	invoke	WriteFile,qword [cfa_HminusSTDOUT+14],character,1,bytes_count,0
-
-	MOV	RAX,[RBP]
-	LEA	RBP,[RBP+8]
-	RET
-
 LastNFA = 0
 
 LastCFA EQU INIT
@@ -95,8 +90,8 @@ FORTH_ENTRY:
 
 	ret
 
-TIB_SIZE EQU 1027
-PAD_SIZE EQU 1027
+TIB_SIZE EQU 100H
+PAD_SIZE EQU 100H
 
 include 'img.asm'
 
@@ -717,20 +712,66 @@ cfa_AHEADER 0,"FILL",FILL
      	db 48h,8dh,6dh,18h    ;     be4:	lea    0x18(%rbp),%rbp
      	db 48h,8bh,45h,0f8h    ;     be8:	mov    -0x8(%rbp),%rax
 	ret   
-cfa_AHEADER 0,"CMOVE>",CMOVEgreat
-     	db 48h,89h,0c1h         ;   c00:	mov    %rax,%rcx
-     	db 48h,8bh,7dh,00h     ;    c03:	mov    0x0(%rbp),%rdi
-     	db 48h,8bh,75h,08h     ;    c07:	mov    0x8(%rbp),%rsi
-     	db 0fdh                 ; c0b:	std    
-     	db 48h,01h,0cfh         ;   c0c:	add    %rcx,%rdi
-     	db 48h,01h,0ceh         ;   c0f:	add    %rcx,%rsi
-     	db 48h,0ffh,0ceh         ;   c12:	dec    %rsi
-     	db 48h,0ffh,0cfh         ;   c15:	dec    %rdi
-     	db 0f3h,0a4h             ;  c18:	rep movsb %ds:(%rsi),%es:(%rdi)
-     	db 0fch                 ; c1a:	cld    
-     	db 48h,8dh,6dh,18h     ;    c1b:	lea    0x18(%rbp),%rbp
-     	db 48h,8bh,45h,0f8h     ;    c1f:	mov    -0x8(%rbp),%rax
+
+cfa_AHEADER 0,"CCMOVE>",CCMOVEgreat
+        TEST RAX, RAX
+        JZ  @f
+
+	PUSH    RSI
+	PUSH    RDI
+
+	MOV     RCX, RAX
+	MOV     RDI, [RBP]
+	MOV     RSI, [RBP+08]
+	STD
+	ADD     RDI, RCX
+	ADD     RSI, RCX
+	DEC     RSI
+	DEC     RDI
+	REP
+	MOVSB
+	CLD
+
+	POP     RDI
+	POP     RSI
+
+@@:	LEA     RBP, [RBP+18]
+	MOV     RAX, [RBP+-08]
 	ret   
+
+cfa_AHEADER 0,"CMOVE>",CMOVEgreat
+ MOV     RCX, [RBP+8]
+ MOV     RDX, [RBP]
+ MOV     R8, RAX
+ LEA     RCX, [RCX+RAX-8]
+ LEA     RDX, [RDX+RAX-8]
+ SHR     RAX, 03
+ JZ    @F
+ CMOVE7F3:
+ MOV     RBX, [RCX]
+ SUB     RAX, 1
+ LEA     RCX, [RCX-8]
+ MOV     [RDX], RBX
+ LEA     RDX, [RDX-8]
+ JNZ  CMOVE7F3
+ @@:
+ MOV     RAX, R8
+ AND     RAX, 7
+ LEA     RCX, [RCX+7]
+ LEA     RDX, [RDX+7]
+ JZ    @F ; 0042682A
+ CMOVE818:
+ MOV     AL, [RCX]
+ SUB     RAX, 1
+ LEA     RCX, [RCX-1]
+ MOV     [RDX], AL
+ LEA     RDX, [RDX-1]
+ JNZ  CMOVE818
+ @@: 
+ MOV     RAX, [RBP+10H]
+ LEA     RBP, [RBP+18H]
+ RET
+
 cfa_AHEADER 0,"CMOVE",CMOVE 
      	db 48h,89h,0c1h         ;  c36: 	mov    %rax,%rcx
      	db 48h,8bh,7dh,00h     ;   c39: 	mov    0x0(%rbp),%rdi
@@ -751,6 +792,30 @@ cfa_AHEADER 0,"ASCIIZ>",ASCIIZgreat
      	db 48h,29h,0d0h         ;   c76:	sub    %rdx,%rax
      	db 48h,89h,55h,00      ;    c79:	mov    %rdx,0x0(%rbp)
      	ret   
+
+cfa_AHEADER 0,"SKIP",SKIP ; caddr u char -- caddr2 u2
+
+  MOV     RDX, RAX       ; EDX=char 
+  MOV     RCX, [RBP]     ; ECX=u=len
+  MOV     RAX, [RBP+08]  ; EBX=caddr
+SKIP67B:
+  jecxz	SKIP691          ; exit if len=0       
+  MOV     AL, [RAX]      ; get character       
+  CMP     AL, 09         ; convert tab to space
+  JNZ	@F
+  MOV     AL, 20
+@@:
+  CMP     AL, DL	; get out if char to scan for
+  JNZ	SKIP691
+  DEC     RCX           ; step count and address
+  INC     RAX
+  JMP     SKIP67B
+SKIP691:
+  MOV     [RBP+08], RAX  ; c-addr
+  MOV     RAX, RCX       ; 'u=len'
+  LEA     RBP, [RBP+08]  ; restore stack
+  RET
+
 cfa_AHEADER 0,"EXECUTE",EXECUTE
      	db 48h,89h,0c2h            ;	mov    %rax,%rdx
      	MOV RAX, [RBP]          ;	mov    0x0(%rbp),%rax
@@ -834,7 +899,6 @@ cfa_AHEADER 0,"LEAVE",LEAVE
 cfa_AHEADER 0,"NNN",NNN
 	call cfa__USERminusCODE
 	DD (T_NNN-main_task) and 0FFFFFFFFH
-
 
 cfa_AHEADER 0,"_SLITERAL-CODE",_SLITERALminusCODE
      	db 48h,8dh,6dh,0f0h         ;	lea    -0x10(%rbp),%rbp
@@ -1010,6 +1074,10 @@ cfa_AHEADER 0,'PAD',PAD
  call cfa__USERminusCODE
  DD (T_PAD-main_task) and 0FFFFFFFFH
 
+cfa_AHEADER 0,'HLD',HLD
+ call cfa__USERminusCODE
+ DD (T_HLD-main_task) and 0FFFFFFFFH
+
 cfa_AHEADER 0,'LAST',LAST
  call cfa__CREATEminusCODE
  DQ LastNFA
@@ -1166,6 +1234,14 @@ cfa_AHEADER 0,'READ-FILE',READminusFILE ;  ( c-addr u1 fileid -- u2 ior )
      	sub	rax,1
      	sbb	rax,rax ; 0=
 	ret
+
+cfa_AHEADER 0,'EMIT_M',EMIT_M
+	mov	[character],al
+	invoke	WriteFile,qword [cfa_HminusSTDOUT+14],character,1,bytes_count,0
+
+	MOV	RAX,[RBP]
+	LEA	RBP,[RBP+8]
+	RET
 
 cfa_AHEADER 0,'ZOPEN-FILE',ZOPENminusFILE ; ( z-addr fam -- fileid ior )
 	invoke	CreateFile,qword [rbp],rax,0,0,OPEN_EXISTING,FILE_ATTRIBUTE_ARCHIVE,0
@@ -1511,9 +1587,40 @@ cfa_AHEADER 0,'BEEP44',BEEP44
 
 cfa_AHEADER 0,'TASKININ',TASKININ
 	mov	rax , R13
-	lea	rbp,[rsp-10000h]
-	lea	R13,[rsp-18000h]
+	lea	rbp,[rsp-18000h]
+	lea	R13,[rsp-10000h]
 	retn
+
+cfa_AHEADER 0,'TASKININ1',TASKININ1
+	mov	rax , R13
+	lea	rbp,[rsp+180h]
+	lea	R13,[rsp+100h]
+	retn
+
+cfa_AHEADER 0,'PARAM',PARAM
+      	LEA	RBP, [RBP-32]
+      	MOV	[RBP+24], rax
+	mov     [RBP+16], rcx
+	mov     [RBP+8], rdx
+	mov     [RBP],  r8
+	mov     rax, r9 
+     ret
+
+
+cfa_AHEADER 0,'TSTART',TSTART
+	invoke	CreateThread,NULL,20000h,rax,0,0,0
+	retn
+
+
+cfa_AHEADER 0,'MARAP',MARAP
+	mov     r9 , rax
+	mov     r8 , [RBP]
+	mov     rdx , [RBP+8]
+	mov     rcx , [RBP+16]
+      	MOV	rax , [RBP+24]
+      	LEA	RBP, [RBP+32]
+     ret
+
 
 cfa_AHEADER 0,'FPI',FPI
 	FLDPI
@@ -1931,29 +2038,28 @@ cfa_AHEADER 0,'FD<',FDless
 	retn
 
 
+cfa_AHEADER 0,'WCIII',WCIII
+	CALL wcinit
+	RET 
 
-cfa_AHEADER 0,'TSTART',TSTART
-	invoke	CreateThread,NULL,20000h,rax,0,0,0
-	retn
-
-cfa_AHEADER 0,'PARAM',PARAM
-      	LEA	RBP, [RBP-32]
-      	MOV	[RBP+24], rax
-	mov     [RBP+16], rcx
-	mov     [RBP+8], rdx
-	mov     [RBP],  r8
-	mov     rax, r9 
-     ret
+cfa_AHEADER 0,'WWWIII',WWWIII
+	CALL WinMainInit
+	RET 
 
 
-cfa_AHEADER 0,'MARAP',MARAP
-	mov     r9 , rax
-	mov     r8 , [RBP]
-	mov     rdx , [RBP+8]
-	mov     rcx , [RBP+16]
-      	MOV	rax , [RBP+24]
-      	LEA	RBP, [RBP+32]
-     ret
+;cfa_AHEADER 0,'LLAC',LLAC
+;	CALL LoadAcc
+;	RET 
+	
+
+cfa_AHEADER 0,'MMMLO',MMMLO
+	push rax
+	CALL msg_loop
+	RET 
+
+cfa_AHEADER 0,'WWWCCC',WWWCCC
+	call cfa__QCONSTANTminusCODE
+	dq	wc_str
 
 cfa_AHEADER 0,"'(ABORT'')",tic_cABORTdticcend
  call cfa__CONSTANTminusCODE 
@@ -1972,6 +2078,13 @@ imgasm:	DB @f-$-1,'spf\img.asm'
 
 main_task:
 	Dq  65 DUP (0)
+T_BASE:
+	Dq 0AH
+	Dq PAD_SIZE DUP (0)
+T_PAD:
+	Dq PAD_SIZE DUP (0)
+T_HLD:
+	Dq 5
 T_R0:
 	Dq 0
 T_S0:
@@ -1986,13 +2099,6 @@ T_CURFILE:
 	Dq 0
 T_HANDLER:
 	Dq 0
-T_HLD:
-	Dq 5
-T_BASE:
-	Dq 0AH
-	Dq PAD_SIZE DUP (0)
-T_PAD:
-	Dq PAD_SIZE DUP (0)
 T_ERminusA:
 	Dq 0
 T_ERminusU:
@@ -2030,6 +2136,7 @@ T_WminusCNT:
 	Dq 0
 T_NNN:
 	Dq 0
+
 Mreserve:
 	Dq MUSEROFFS DUP (0)
 T_FORTH:
@@ -2056,7 +2163,6 @@ CTOP	DB 0x100000 DUP (?)
 SPP	DQ 10 DUP (?)
 bytes_count dd ?
 character db ?
-
 
 section '.idata' import data readable writeable
 
