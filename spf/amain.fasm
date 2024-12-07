@@ -2037,30 +2037,6 @@ cfa_AHEADER 0,'FD<',FDless
 
 	retn
 
-
-cfa_AHEADER 0,'WCIII',WCIII
-	CALL wcinit
-	RET 
-
-cfa_AHEADER 0,'WWWIII',WWWIII
-	CALL WinMainInit
-	RET 
-
-
-;cfa_AHEADER 0,'LLAC',LLAC
-;	CALL LoadAcc
-;	RET 
-	
-
-cfa_AHEADER 0,'MMMLO',MMMLO
-	push rax
-	CALL msg_loop
-	RET 
-
-cfa_AHEADER 0,'WWWCCC',WWWCCC
-	call cfa__QCONSTANTminusCODE
-	dq	wc_str
-
 cfa_AHEADER 0,"'(ABORT'')",tic_cABORTdticcend
  call cfa__CONSTANTminusCODE 
  DD   cfa__cABORTdticcend and 0ffffffffh
