@@ -61,7 +61,7 @@ DUP 0= [IF] .( KERNEL32.DLL LOAD ERROR) ABORT [THEN]
 
  $48 C, $81 C, $EC C,  $3000 L, \    subq    $0x18000,%rsp  
 
- POSTPONE TASKININ1
+ POSTPONE CALLBACKIN
  POSTPONE PARAM
 
  COMPILE,
@@ -76,33 +76,3 @@ DUP 0= [IF] .( KERNEL32.DLL LOAD ERROR) ABORT [THEN]
     $5B C,    \ pop  ebx 
  POSTPONE EXIT
 ;
-
-: WNDPROC1: ( xt "name" -- )
-
- PARSE-WORD SHEADER
-
- $53 C,		\ push ebx
- $56 C,		\ push esi
- $57 C,		\ push edi
- $41 C, $55  C,	\ push r13
- $41 C, $56  C,	\ push r14
- $55 C,		\ push ebp
-
- $48 C, $81 C, $EC C,  $3000 L, \    subq    $0x18000,%rsp  
-
- POSTPONE TASKININ1
- POSTPONE PARAM
-
- COMPILE,
-
-  $48 C, $81 C, $C4 C,  $3000 L, \ addq    $0x18000,%rsp  
-
-    $5D C,     \ pop  ebp 
-    $41 C, $5E C, \ pop r14
-    $41 C, $5D C, \ pop r13   
-    $5F C,     \ pop  edi 
-    $5E C,     \ pop  esi 
-    $5B C,    \ pop  ebx 
- POSTPONE EXIT
-;
-
