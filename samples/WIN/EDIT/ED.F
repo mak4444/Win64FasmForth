@@ -427,7 +427,7 @@ VARIABLE FindHWND
 ;
 
 : DoCommand
- CR ." DoCommand=" DUP H.  DUP .
+\ CR ." DoCommand=" DUP H.  DUP .
     CASE
       cmdInclude  OF  FileDLG	DUP
                         IF	?LoadDo
@@ -559,6 +559,8 @@ Content 44 DUMP
 
 :NONAME   { lpar wpar msg hwnd -- }
 
+	RP@ $100 +  TlsIndex!
+
    H-STDOUT >R  EDIT.LOG TO H-STDOUT
 
   CR ." M=" HEX lpar . wpar . msg . hwnd .
@@ -600,11 +602,20 @@ IMAGE-BASE CONSTANT HINST  \ Instance
   3 CONSTANT EdID
 
 :NONAME { upp  hwnd msg  wpar lpar  \ hdc hout -- } 
+	RP@ $100 +  TlsIndex!
+\   $77777  RP@ $100 + $248 +  !
 
  DECIMAL
-       H-STDOUT TO hout  EDIT.LOG TO H-STDOUT
 
- CR ." P=" hwnd H. msg H. wpar H. lpar H.
+       H-STDOUT TO hout  EDIT.LOG TO H-STDOUT
+\   $77777  PAD  !
+\   $77777  PAD $20 +  !
+\    $77777   HLD !
+
+\ $77777 .
+
+ CR ." P="   hwnd H. msg H. wpar H. lpar H.
+
  msg CASE 
 
    WM_CREATE OF
@@ -624,43 +635,18 @@ IMAGE-BASE CONSTANT HINST  \ Instance
  TO EdHWnd
 
       EdHWnd UpdateWindow
-
- CR ." UpdateWindow=" DUP H.   EdHWnd H.
   DROP
       EdHWnd SW_SHOW ShowWindow  DROP
-(
-      EdHWnd  1 11 LSHIFT \ IDC_EDT1
- GetDlgItem DUP H.
-\	EdHWnd
- GWLP_WNDPROC ['] MyEdWndProc 
-\	SetWindowLongA
-	SetWindowLongPtrA
- CR ." SetWindowLongPtrA=" DUP H.
- DUP 0=
- IF GetLastError  H. THEN
- TO EdWndProc
-)
       hwnd GetDC -> hdc
       logfont CreateFontIndirectA TO hFont
       EdHWnd WM_SETFONT hFont 1  SendMessageA DROP
-\ [UAD@]   1 >R hFont >R WM_SETFONT >R EdHWnd DUP>R RSendMessageA DROP [UAD!]
 	EdHWnd EM_EXLIMITTEXT 0 100000000
 	SendMessageA  DROP
 
       hwnd hdc ReleaseDC DROP
 
       0
-   ENDOF \ 1
-(
-   WM_CREATE \ 99999999 +
-   OF WS_EX_CLIENTEDGE Z" EDIT"
-	0  WS_VISIBLE  WS_CHILD OR WS_HSCROLL OR WS_VSCROLL OR 
-	ES_AUTOHSCROLL OR ES_AUTOVSCROLL OR ES_MULTILINE OR
-	     0  0  0  0   hwnd  EdID  HINST 0 CreateWindowExA
-	DUP FindOwner !
-	TO EdHWnd
-   ENDOF \ 1
-)
+   ENDOF
 
    WM_SIZE OF
        EdHWnd
@@ -669,7 +655,6 @@ IMAGE-BASE CONSTANT HINST  \ Instance
        lpar HIWORD
        1
        MoveWindow DROP
-    \   EMyhwnd UpdateWindow  DROP
       0
    ENDOF    \ 2  
 
@@ -685,17 +670,6 @@ IMAGE-BASE CONSTANT HINST  \ Instance
 
 
     DUP WM_DESTROY = IF TRUE TO EDIT-END TRUE TO ED_WATE THEN
-(
-    DUP WM_CLOSE = IF   
-                            ?SaveCng
-                            DUP IDYES =
-                            IF  EDIT_FN COUNT ['] EDIT_Save CATCH DROP \ ." S=" .
-                            THEN
-                            IDCANCEL =
-                            IF  DROP  hout TO H-STDOUT  EXIT
-                            THEN
- )
-\   EDIT_FN COUNT ['] EDIT_Save CATCH DROP \ ." S=" .
 
                    THEN
  hwnd  msg wpar lpar DefWindowProcA
@@ -813,7 +787,10 @@ EXPORT \ ---------------------------------------
 
 
 : TASK_EDIT
-   TASKININ    DECIMAL
+[ $48 C, $81 C, $EC C,  $3000 L, ] \    subq    $0x18000,%rsp  
+  CALLBACKIN
+\   TASKININT
+  DECIMAL
   EDIT_XY 2@ { xx yy -- }
 
 
@@ -922,3 +899,4 @@ CREATE   CC_INITS 8 , 0xFFFF ,
 ;MODULE \ ---------------------------
 CASE-INS !
 PREVIOUS PREVIOUS
+\ sssss
