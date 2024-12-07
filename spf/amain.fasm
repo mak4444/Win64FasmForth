@@ -761,10 +761,10 @@ cfa_AHEADER 0,"CMOVE>",CMOVEgreat
  LEA     RDX, [RDX+7]
  JZ    @F ; 0042682A
  CMOVE818:
- MOV     AL, [RCX]
+ MOV     BL, [RCX]
  SUB     RAX, 1
  LEA     RCX, [RCX-1]
- MOV     [RDX], AL
+ MOV     [RDX], BL
  LEA     RDX, [RDX-1]
  JNZ  CMOVE818
  @@: 
