@@ -10,7 +10,7 @@ IDM_ABOUT = 901
 ;R13 tast
 ;R14 R15 loop
 
-format PE64 console
+format PE64 console ; at 800000h
 ;stack 1000000h                ; stack size
 ;stack 90000h,60000h                ; stack size
 
@@ -817,10 +817,10 @@ SKIP691:
   RET
 
 cfa_AHEADER 0,"EXECUTE",EXECUTE
-     	db 48h,89h,0c2h            ;	mov    %rax,%rdx
-     	MOV RAX, [RBP]          ;	mov    0x0(%rbp),%rax
-     	db 48h,8dh,6dh,08h         ;	lea    0x8(%rbp),%rbp
-     	db 0ffh,0e2h               ;	jmpq   *%rdx
+	PUSH    RAX
+	MOV     RAX, [RBP]
+	LEA     RBP, [RBP+08]
+	RET
 
 cfa_AHEADER 0,"PERFORM",PERFORM
      	db 48h,8bh,00             ;	mov    (%rax),%rax
@@ -1225,7 +1225,6 @@ cfa_AHEADER 0,'WRITE-FILE',WRITEminusFILE ;  ( c-addr u fileid -- ior )
 cfa_AHEADER 0,'READ-FILE',READminusFILE ;  ( c-addr u1 fileid -- u2 ior )
 	MOV	qword [bytes_count],rbx
 	invoke	ReadFile,rax,qword [rbp+8],qword [rbp],bytes_count,0
-
 	lea	rbp,[rbp+8]
 	mov	ebx, dword [bytes_count]
 	AND	rbx,07fffffffh
@@ -1244,7 +1243,12 @@ cfa_AHEADER 0,'EMIT_M',EMIT_M
 	RET
 
 cfa_AHEADER 0,'ZOPEN-FILE',ZOPENminusFILE ; ( z-addr fam -- fileid ior )
+	MOV     R12, RSP
+	SUB     RSP, 20h
+	AND     RSP, -10h
 	invoke	CreateFile,qword [rbp],rax,0,0,OPEN_EXISTING,FILE_ATTRIBUTE_ARCHIVE,0
+	MOV     RSP, R12
+
 	AND	rax,07fffffffh
 	mov	[rbp],rax
 
@@ -1254,7 +1258,12 @@ cfa_AHEADER 0,'ZOPEN-FILE',ZOPENminusFILE ; ( z-addr fam -- fileid ior )
 	ret
 
 cfa_AHEADER 0,'ZOPEN-FILE-SHARED',ZOPENminusFILEminusSHARED ; ( z-addr fam -- fileid ior )
+	MOV     R12, RSP
+	SUB     RSP, 20h
+	AND     RSP, -10h
 	invoke	CreateFile,qword [rbp],rax,3,0,OPEN_EXISTING,FILE_ATTRIBUTE_ARCHIVE,0
+	MOV     RSP, R12
+
 	AND	rax,07fffffffh
 	mov	[rbp],rax
 
@@ -1265,7 +1274,12 @@ cfa_AHEADER 0,'ZOPEN-FILE-SHARED',ZOPENminusFILEminusSHARED ; ( z-addr fam -- fi
 @01:	dd	12, 0, 1
 
 cfa_AHEADER 0,'ZCREATE-FILE',ZCREATEminusFILE ;( z-addr fam -- fileid ior )
+	MOV     R12, RSP
+	SUB     RSP, 20h
+	AND     RSP, -10h
 	invoke	CreateFile,qword [rbp],rax,0,0,CREATE_ALWAYS,FILE_ATTRIBUTE_ARCHIVE,0
+	MOV     RSP, R12
+
 	AND	rax,07fffffffh
 	mov	[rbp],rax
 
@@ -1275,7 +1289,12 @@ cfa_AHEADER 0,'ZCREATE-FILE',ZCREATEminusFILE ;( z-addr fam -- fileid ior )
 	ret
 
 cfa_AHEADER 0,'ZCREATE-FILE-SHARED',ZCREATEminusFILEminusSHARED ;( z-addr fam -- fileid ior )
+	MOV     R12, RSP
+	SUB     RSP, 20h
+	AND     RSP, -10h
 	invoke	CreateFile,qword [rbp],rax,3,0,CREATE_ALWAYS,FILE_ATTRIBUTE_ARCHIVE,0
+	MOV     RSP, R12
+
 	AND	rax,07fffffffh
 	mov	[rbp],rax
 
@@ -1285,7 +1304,12 @@ cfa_AHEADER 0,'ZCREATE-FILE-SHARED',ZCREATEminusFILEminusSHARED ;( z-addr fam --
 	ret
 
 cfa_AHEADER 0,'CLOSE-FILE',CLOSEminusFILE ;( fileid -- ior )
+	MOV     R12, RSP
+	SUB     RSP, 20h
+	AND     RSP, -10h
 	invoke	CloseHandle,rax
+	MOV     RSP, R12
+
      	mov    rax,0
 	ret
 
@@ -1678,7 +1702,7 @@ cfa_AHEADER 0,'F0<',F0less
 @@:   MOV RAX, RBX
        RET
 
-cfa_AHEADER 0,'F<',Fless
+cfa_AHEADER 0,'BF<',BFless
        LEA EBP,  [EBP-8]
        MOV [EBP], RAX
        XOR RBX, RBX
@@ -1690,6 +1714,26 @@ cfa_AHEADER 0,'F<',Fless
        MOV RBX,  -1
 @@:   MOV RAX, RBX
        RET
+
+FCMP2:
+  SUB     RBP, 08
+  MOV     [RBP], RAX
+  FXCH    ST1
+  FCOMPP
+  FWAIT
+  FSTSW   AX
+  AND     AX, 4100H
+  MOVZX   RBX, AX
+  RET
+
+cfa_AHEADER 0,'F<',Fless
+  CALL    FCMP2
+  CMP     RBX, 00000100H
+  SETE   BL
+  NEG     BL
+  MOVSX   RAX, BL
+  RET
+
 
 cfa_AHEADER 0,'F=',F_equ
        LEA EBP,  [EBP-8]
@@ -1813,23 +1857,26 @@ cfa_AHEADER 0,'FDEPTH',FDEPTH
 
 cfa_AHEADER 0,'S>F',SgreatF
 
-      	MOV [RBP-8], RAX
-      	
-        FILD QWORD [RBP-8]
 
-     	MOV RAX, [RBP]         ;	mov    0x0(%rbp),%rax
-     	db 48h,8dh,6dh,08         ; 	lea    0x8(%rbp),%rbp
+  MOV     RBX, [RBP]
+  MOV     [RBP], RAX
+  MOV     RAX, RBX
 
+	db 48H,0DFH,6DH,0  ;             FILD    QWORD [RBP]
+
+      	LEA RBP, [RBP+8]
 	retn
 
-cfa_AHEADER 0,'F>S',FgreatS
+cfa_AHEADER 0,'FR>S',FRgreatS
 
       	LEA RBP, [RBP-8]
-      	MOV [RBP], RAX
 
-        FISTP QWORD [RBP-8]
+	db 48H,0DFH,7DH,0  ;              FSTP    QWORD [RBP]
 
-     	MOV RAX, [RBP-8]
+
+	MOV     RBX, [RBP]
+	MOV     [RBP], RAX
+	MOV     RAX, RBX
 
 	retn
 
@@ -1850,6 +1897,7 @@ cfa_AHEADER 0,'DATA>FLOAT',DATAgreatFLOAT
 
 	retn
 
+
 cfa_AHEADER 0,'SFLOAT>DATA',SFLOATgreatDATA
 
       	LEA RBP, [RBP-8]
@@ -1857,6 +1905,9 @@ cfa_AHEADER 0,'SFLOAT>DATA',SFLOATgreatDATA
      	XCHG RAX, [RBP]
 
 	retn
+
+
+
 
 cfa_AHEADER 0,'DATA>SFLOAT',DATAgreatSFLOAT
 
@@ -2037,6 +2088,30 @@ cfa_AHEADER 0,'FD<',FDless
 
 	retn
 
+
+cfa_AHEADER 0,'WCIII',WCIII
+	CALL wcinit
+	RET 
+
+cfa_AHEADER 0,'WWWIII',WWWIII
+	CALL WinMainInit
+	RET 
+
+
+;cfa_AHEADER 0,'LLAC',LLAC
+;	CALL LoadAcc
+;	RET 
+	
+
+cfa_AHEADER 0,'MMMLO',MMMLO
+	push rax
+	CALL msg_loop
+	RET 
+
+cfa_AHEADER 0,'WWWCCC',WWWCCC
+	call cfa__QCONSTANTminusCODE
+	dq	wc_str
+
 cfa_AHEADER 0,"'(ABORT'')",tic_cABORTdticcend
  call cfa__CONSTANTminusCODE 
  DD   cfa__cABORTdticcend and 0ffffffffh
@@ -2137,7 +2212,7 @@ align 8
 TIBB	DB 512 DUP (?)
 CTOP	DB 0x100000 DUP (?)
 SPP	DQ 10 DUP (?)
-bytes_count dd ?
+bytes_count dq ?
 character db ?
 
 
@@ -2152,6 +2227,11 @@ import Comdlg32,\
          GetOpenFileNameA,'GetOpenFileNameA',\
          GetSaveFileNameA,'GetSaveFileNameA'
 
+import    KERNEL32,\ 
+           ExitProcess,    'ExitProcess' 
+
+
   include 'api/kernel32.inc'
   include 'api/user32.inc'
   include 'api/gdi32.inc'
+  include 'MMO0.ASM'
